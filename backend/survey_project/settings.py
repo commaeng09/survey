@@ -55,6 +55,7 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 AUTH_USER_MODEL = 'authentication.User'
 
 MIDDLEWARE = [
+    'survey_project.cors_middleware.CustomCorsMiddleware',  # 커스텀 CORS 미들웨어 추가
     'corsheaders.middleware.CorsMiddleware',  # CORS는 최상단에!
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
