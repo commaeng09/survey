@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContextNew';
 
@@ -14,8 +14,11 @@ interface Survey {
 export default function DashboardPage() {
   const { user, logout } = useAuth();
   
-  // 모의 데이터
-  const [surveys] = useState<Survey[]>([
+  // 사용자별 설문 데이터 관리
+  const [surveys, setSurveys] = useState<Survey[]>([]);
+  
+  // 기본 테스트 계정용 설문들
+  const defaultSurveys: Survey[] = [
     {
       id: '1',
       title: '고객 만족도 조사',
@@ -40,7 +43,68 @@ export default function DashboardPage() {
       createdAt: '2025-01-05',
       responses: 128
     }
-  ]);
+  ];
+
+  // 새 회원가입 사용자용 샘플 설문
+  const sampleSurvey: Survey = {
+    id: 'sample-1',
+    title: '환영합니다! 첫 번째 설문 샘플',
+    description: '설문지 관리 시스템을 체험해보세요. 이것은 샘플 설문입니다.',
+    status: 'draft',
+    createdAt: new Date().toISOString().split('T')[0],
+    responses: 0
+  };
+
+  useEffect(() => {
+    // 테스트 계정인지 확인
+    const isTestAccount = user?.username === 'instructor' || user?.username === 'admin';
+    
+    if (isTestAccount) {
+      // 테스트 계정은 모든 샘플 설문을 보여줌
+      setSurveys(defaultSurveys);
+    } else {
+      // 새 사용자는 샘플 설문 1개만 보여줌
+      setSurveys([sampleSurvey]);
+    }
+  }, [user]);
+
+  const handleCreateSurvey = () => {
+    // 새 설문 만들기 기능
+    const newSurvey: Survey = {
+      id: `survey-${Date.now()}`,
+      title: '새 설문조사',
+      description: '설문조사 설명을 입력하세요.',
+      status: 'draft',
+      createdAt: new Date().toISOString().split('T')[0],
+      responses: 0
+    };
+    
+    setSurveys(prev => [newSurvey, ...prev]);
+    alert('새 설문이 생성되었습니다!');
+  };
+
+  const handleEditSurvey = (surveyId: string) => {
+    alert(`설문 ${surveyId} 편집 기능 (개발 예정)`);
+  };
+
+  const handleViewAnalytics = (surveyId: string) => {
+    alert(`설문 ${surveyId} 분석 보기 (개발 예정)`);
+  };
+
+  const handleShareSurvey = (surveyId: string) => {
+    alert(`설문 ${surveyId} 공유 기능 (개발 예정)`);
+  };
+
+  const handleDeleteSurvey = (surveyId: string) => {
+    if (confirm('정말로 이 설문을 삭제하시겠습니까?')) {
+      setSurveys(prev => prev.filter(s => s.id !== surveyId));
+      alert('설문이 삭제되었습니다.');
+    }
+  };
+
+  const handleImportSurvey = () => {
+    alert('설문 가져오기 기능 (개발 예정)');
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -171,13 +235,19 @@ export default function DashboardPage() {
         {/* Action Buttons */}
         <div className="mb-8">
           <div className="flex flex-col sm:flex-row gap-4">
-            <button className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors">
+            <button 
+              onClick={handleCreateSurvey}
+              className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+            >
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
               </svg>
               새 설문 만들기
             </button>
-            <button className="inline-flex items-center justify-center px-6 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+            <button 
+              onClick={handleImportSurvey}
+              className="inline-flex items-center justify-center px-6 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+            >
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
               </svg>
@@ -214,22 +284,38 @@ export default function DashboardPage() {
                   </div>
                   
                   <div className="flex items-center space-x-2 ml-4">
-                    <button className="text-gray-400 hover:text-gray-600">
+                    <button 
+                      onClick={() => handleEditSurvey(survey.id)}
+                      className="text-gray-400 hover:text-gray-600 p-1 rounded-md transition-colors"
+                      title="편집"
+                    >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                       </svg>
                     </button>
-                    <button className="text-gray-400 hover:text-gray-600">
+                    <button 
+                      onClick={() => handleViewAnalytics(survey.id)}
+                      className="text-gray-400 hover:text-gray-600 p-1 rounded-md transition-colors"
+                      title="분석 보기"
+                    >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                       </svg>
                     </button>
-                    <button className="text-gray-400 hover:text-gray-600">
+                    <button 
+                      onClick={() => handleShareSurvey(survey.id)}
+                      className="text-gray-400 hover:text-gray-600 p-1 rounded-md transition-colors"
+                      title="공유"
+                    >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
                       </svg>
                     </button>
-                    <button className="text-gray-400 hover:text-red-600">
+                    <button 
+                      onClick={() => handleDeleteSurvey(survey.id)}
+                      className="text-gray-400 hover:text-red-600 p-1 rounded-md transition-colors"
+                      title="삭제"
+                    >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
@@ -250,7 +336,10 @@ export default function DashboardPage() {
             <h3 className="mt-2 text-sm font-semibold text-gray-900">설문이 없습니다</h3>
             <p className="mt-1 text-sm text-gray-500">첫 번째 설문조사를 만들어보세요.</p>
             <div className="mt-6">
-              <button className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+              <button 
+                onClick={handleCreateSurvey}
+                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+              >
                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                 </svg>
