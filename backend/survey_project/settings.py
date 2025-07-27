@@ -185,7 +185,8 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
 }
 
-# CORS settings
+# CORS settings - Temporary allow all for debugging
+CORS_ALLOW_ALL_ORIGINS = True  # Temporary for debugging
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
@@ -198,7 +199,6 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_ALL_ORIGINS = False
 CORS_PREFLIGHT_MAX_AGE = 86400
 
 # CORS Headers
@@ -241,3 +241,15 @@ if not DEBUG:
     
     # Static files settings
     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# CSRF settings for CORS
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5174",
+    "https://survey-zeta-seven.vercel.app",
+    "https://survey-amz9fv00u-commaeng09s-projects.vercel.app",
+]
