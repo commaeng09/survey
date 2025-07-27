@@ -1,9 +1,7 @@
 // API 기본 설정
-const LOCAL_API_BASE = 'http://127.0.0.1:8000/api';
-const RENDER_API_BASE = 'https://survey-backend-dgiy.onrender.com/api';
-const API_BASE_URL = RENDER_API_BASE; // 실제 서비스용으로 변경
+const API_BASE_URL = 'https://survey-backend-dgiy.onrender.com/api';
 
-console.log('� PRODUCTION MODE: Using', API_BASE_URL);
+console.log('🚀 PRODUCTION MODE: Using', API_BASE_URL);
 
 // API 요청 헬퍼 함수
 const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
