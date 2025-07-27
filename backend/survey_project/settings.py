@@ -193,7 +193,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:5173",
     "http://localhost:5174",
     "http://127.0.0.1:5174",
-    "https://survey-zeta-seven.vercel.app",  # 실제 Vercel 도메인
+    "https://survey-zeta-seven.vercel.app",  # 이전 Vercel 도메인
+    "https://survey-amz9fv00u-commaeng09s-projects.vercel.app",  # 현재 Vercel 도메인
 ]
 
 CORS_ALLOW_CREDENTIALS = True

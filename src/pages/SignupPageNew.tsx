@@ -127,14 +127,24 @@ export default function SignupPage() {
     }
 
     try {
+      console.log('🚀 Starting signup with data:', { ...formData, password: '[HIDDEN]', password_confirm: '[HIDDEN]' });
       const success = await signup(formData as SignupData);
+      
       if (success) {
+        console.log('✅ Signup successful, navigating to dashboard');
         navigate('/dashboard');
       } else {
-        setError('회원가입 중 오류가 발생했습니다. 다시 시도해주세요.');
+        console.error('❌ Signup failed');
+        setError('회원가입 중 오류가 발생했습니다. 네트워크 연결을 확인하고 다시 시도해주세요.');
       }
     } catch (err) {
-      setError('회원가입 중 오류가 발생했습니다.');
+      console.error('💥 Signup exception:', err);
+      
+      if (err instanceof TypeError && err.message.includes('Failed to fetch')) {
+        setError('네트워크 연결 오류입니다. 인터넷 연결을 확인하고 다시 시도해주세요.');
+      } else {
+        setError('회원가입 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+      }
     }
   };
 

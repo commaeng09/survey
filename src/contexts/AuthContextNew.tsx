@@ -90,25 +90,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     
     try {
+      console.log('🚀 Starting signup process for:', data.username);
+      console.log('📝 Signup data:', { ...data, password: '[HIDDEN]', password_confirm: '[HIDDEN]' });
+      
+      const requestBody = {
+        username: data.username,
+        password: data.password,
+        password_confirm: data.password_confirm,
+        first_name: data.first_name,
+        last_name: data.last_name,
+        email: data.email,
+        user_type: data.user_type,
+        organization: data.organization
+      };
+      
+      console.log('🌐 Making API request to:', 'https://survey-production-c653.up.railway.app/api/auth/register/');
+      
       const response = await fetch('https://survey-production-c653.up.railway.app/api/auth/register/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          username: data.username,
-          password: data.password,
-          password_confirm: data.password_confirm,
-          first_name: data.first_name,
-          last_name: data.last_name,
-          email: data.email,
-          user_type: data.user_type,
-          organization: data.organization
-        }),
+        body: JSON.stringify(requestBody),
       });
+
+      console.log('📡 Signup response status:', response.status);
+      console.log('📡 Signup response ok:', response.ok);
 
       if (response.ok) {
         const responseData = await response.json();
+        console.log('✅ Signup successful:', responseData);
+        
         const user: User = {
           id: responseData.user.id,
           username: responseData.user.username,
@@ -123,9 +135,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.setItem('authToken', responseData.tokens.access);
         setIsLoading(false);
         return true;
+      } else {
+        const errorData = await response.text();
+        console.error('❌ Signup failed with status:', response.status);
+        console.error('❌ Error response:', errorData);
       }
     } catch (error) {
-      console.error('Signup error:', error);
+      console.error('💥 Signup error:', error);
+      console.error('💥 Error type:', error instanceof Error ? error.name : typeof error);
+      console.error('💥 Error message:', error instanceof Error ? error.message : String(error));
+      
+      // 네트워크 오류인지 확인
+      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        console.error('🌐 Network connectivity issue detected');
+      }
     }
     
     setIsLoading(false);
