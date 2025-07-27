@@ -12,7 +12,7 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-me-in-producti
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,healthcheck.railway.app,survey-production-c653.up.railway.app').split(',')
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,.onrender.com').split(',')
 
 # Railway에서 자동으로 설정하는 환경변수들을 ALLOWED_HOSTS에 추가
 import os
@@ -195,14 +195,14 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
 }
 
-# CORS settings - MAXIMUM PERMISSIVE FOR DEBUGGING
+# CORS settings - RENDER.COM OPTIMIZED
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_ALL_HEADERS = True
 CORS_ALLOW_ALL_METHODS = True
 CORS_PREFLIGHT_MAX_AGE = 86400
 
-# Backup whitelist
+# Backup whitelist for Render
 CORS_ALLOWED_ORIGINS = [
     "https://survey-zeta-seven.vercel.app",
     "https://survey-amz9fv00u-commaeng09s-projects.vercel.app",
@@ -214,7 +214,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:5174",
 ]
 
-# Debug CORS
+# Render specific CORS
 CORS_URLS_REGEX = r'^.*$'  # Apply to ALL URLs
 CORS_REPLACE_HTTPS_REFERER = True
 
@@ -233,7 +233,7 @@ if not DEBUG:
     # Static files settings
     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# CSRF settings for CORS
+# CSRF settings for CORS - Render optimized
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
@@ -243,4 +243,5 @@ CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:5174",
     "https://survey-zeta-seven.vercel.app",
     "https://survey-amz9fv00u-commaeng09s-projects.vercel.app",
+    "https://*.onrender.com",
 ]
