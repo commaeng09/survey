@@ -1,5 +1,10 @@
-// API 기본 설정 - Render.com 새로운 백엔드 (강제 업데이트)
-const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_URL || 'https://survey-backend-dgiy.onrender.com/api';
+// API 기본 설정 - Render.com 새로운 백엔드 (2025-01-27 핵폭탄 버전)
+// 캐시 버스터: v2.0.0-render-force-update
+const FORCE_NEW_API_URL = 'https://survey-backend-dgiy.onrender.com/api';
+const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_URL || FORCE_NEW_API_URL;
+
+console.log('🎯 FINAL API URL:', API_BASE_URL);
+console.log('🔥 Force URL:', FORCE_NEW_API_URL);
 
 // API 요청 헬퍼 함수
 const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
