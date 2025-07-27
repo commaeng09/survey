@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://survey-production-c653.up.railway.app',
+        target: 'https://survey-backend-dgiy.onrender.com',
         changeOrigin: true,
         secure: true,
       }

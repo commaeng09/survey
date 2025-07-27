@@ -53,7 +53,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     
     try {
-      const response = await fetch('https://survey-production-c653.up.railway.app/api/auth/login/', {
+      const response = await fetch('https://survey-backend-dgiy.onrender.com/api/auth/login/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -104,9 +104,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         organization: data.organization
       };
       
-      console.log('🌐 Making API request to:', 'https://survey-production-c653.up.railway.app/api/auth/register/');
+      console.log('🌐 Making API request to:', 'https://survey-backend-dgiy.onrender.com/api/auth/register/');
       
-      const response = await fetch('https://survey-production-c653.up.railway.app/api/auth/register/', {
+      const response = await fetch('https://survey-backend-dgiy.onrender.com/api/auth/register/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
