@@ -3,6 +3,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.http import JsonResponse
 from .serializers import UserRegistrationSerializer, UserLoginSerializer, UserSerializer
 from .models import User
 
@@ -74,18 +75,32 @@ def profile_view(request):
         'user': UserSerializer(request.user).data
     }, status=status.HTTP_200_OK)
 
-@api_view(['POST'])
+@api_view(['POST', 'OPTIONS'])
 @permission_classes([AllowAny])
 def check_username_view(request):
     """사용자명 중복 확인"""
+    # OPTIONS 요청에 대한 명시적 처리
+    if request.method == 'OPTIONS':
+        response = Response({})
+        response['Access-Control-Allow-Origin'] = '*'
+        response['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        response['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+        return response
+    
     username = request.data.get('username')
     if not username:
-        return Response({
+        response = Response({
             'error': '사용자명을 입력해주세요.'
         }, status=status.HTTP_400_BAD_REQUEST)
+    else:
+        is_available = not User.objects.filter(username=username).exists()
+        response = Response({
+            'available': is_available,
+            'message': '사용 가능한 아이디입니다.' if is_available else '이미 사용 중인 아이디입니다.'
+        }, status=status.HTTP_200_OK)
     
-    is_available = not User.objects.filter(username=username).exists()
-    return Response({
-        'available': is_available,
-        'message': '사용 가능한 아이디입니다.' if is_available else '이미 사용 중인 아이디입니다.'
-    }, status=status.HTTP_200_OK)
+    # 모든 응답에 CORS 헤더 추가
+    response['Access-Control-Allow-Origin'] = '*'
+    response['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+    response['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+    return response
