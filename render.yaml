@@ -21,7 +21,9 @@ services:
       - key: CORS_ALLOWED_ORIGINS
         value: "https://survey-zeta-seven.vercel.app,https://survey-amz9fv00u-commaeng09s-projects.vercel.app"
 
-  - type: pserv
-    name: survey-db
+databases:
+  - name: survey-db
+    databaseName: survey
+    user: survey_user
     plan: free
     region: oregon
