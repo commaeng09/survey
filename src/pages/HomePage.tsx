@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContextNew';
 
 export default function HomePage() {
   const { isAuthenticated, user, logout } = useAuth();
@@ -11,7 +11,7 @@ export default function HomePage() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <Link to="/" className="text-xl font-semibold text-gray-900 hover:text-gray-700 transition-colors">
-                설문지 관리 시스템
+                ?�문지 관�??�스??
               </Link>
             </div>
             <div className="flex items-center space-x-3">
@@ -21,26 +21,26 @@ export default function HomePage() {
                     to="/dashboard"
                     className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors"
                   >
-                    대시보드
+                    ?�?�보??
                   </Link>
                   <Link 
                     to="/create"
                     className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors"
                   >
-                    설문지 생성
+                    ?�문지 ?�성
                   </Link>
                   <span className="text-sm text-gray-700">
-                    <span className="font-medium">{user?.name}</span>님
+                    <span className="font-medium">{user?.name}</span>??
                   </span>
                   <button
                     onClick={() => {
-                      if (confirm('로그아웃 하시겠습니까?')) {
+                      if (confirm('로그?�웃 ?�시겠습?�까?')) {
                         logout();
                       }
                     }}
                     className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors"
                   >
-                    로그아웃
+                    로그?�웃
                   </button>
                 </>
               ) : (
@@ -49,13 +49,13 @@ export default function HomePage() {
                     to="/signup"
                     className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors"
                   >
-                    회원가입
+                    ?�원가??
                   </Link>
                   <Link 
                     to="/login"
                     className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
                   >
-                    강사 로그인
+                    강사 로그??
                   </Link>
                 </>
               )}
@@ -69,10 +69,10 @@ export default function HomePage() {
         <div className="px-4 py-6 sm:px-0">
           <div className="text-center">
             <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
-              강사와 훈련생을 위한 설문지 플랫폼
+              강사?� ?�련?�을 ?�한 ?�문지 ?�랫??
             </h2>
             <p className="mt-4 text-lg text-gray-600">
-              Google Forms 스타일의 직관적인 설문지 생성, 배포, 분석 도구
+              Google Forms ?��??�의 직�??�인 ?�문지 ?�성, 배포, 분석 ?�구
             </p>
           </div>
 
@@ -89,9 +89,9 @@ export default function HomePage() {
                     </div>
                   </div>
                   <div className="ml-4">
-                    <h3 className="text-lg font-medium text-gray-900">설문지 생성</h3>
+                    <h3 className="text-lg font-medium text-gray-900">?�문지 ?�성</h3>
                     <p className="text-sm text-gray-600">
-                      드래그 앤 드롭으로 쉽게 설문지를 만들어보세요
+                      ?�래�????�롭?�로 ?�게 ?�문지�?만들?�보?�요
                     </p>
                   </div>
                 </div>
@@ -109,9 +109,9 @@ export default function HomePage() {
                     </div>
                   </div>
                   <div className="ml-4">
-                    <h3 className="text-lg font-medium text-gray-900">쉬운 배포</h3>
+                    <h3 className="text-lg font-medium text-gray-900">?�운 배포</h3>
                     <p className="text-sm text-gray-600">
-                      링크 공유로 간편하게 설문지를 배포하세요
+                      링크 공유�?간편?�게 ?�문지�?배포?�세??
                     </p>
                   </div>
                 </div>
@@ -129,9 +129,9 @@ export default function HomePage() {
                     </div>
                   </div>
                   <div className="ml-4">
-                    <h3 className="text-lg font-medium text-gray-900">실시간 분석</h3>
+                    <h3 className="text-lg font-medium text-gray-900">?�시�?분석</h3>
                     <p className="text-sm text-gray-600">
-                      응답률, 클릭률 등 실시간 통계를 확인하세요
+                      ?�답�? ?�릭�????�시�??�계�??�인?�세??
                     </p>
                   </div>
                 </div>
@@ -145,7 +145,7 @@ export default function HomePage() {
               to="/create"
               className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-md text-lg font-medium transition-colors inline-block"
             >
-              설문지 만들기 시작하기
+              ?�문지 만들�??�작?�기
             </Link>
           </div>
         </div>
