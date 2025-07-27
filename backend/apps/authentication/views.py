@@ -4,6 +4,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import UserRegistrationSerializer, UserLoginSerializer, UserSerializer
+from .models import User
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -71,4 +72,20 @@ def profile_view(request):
     """사용자 프로필 조회"""
     return Response({
         'user': UserSerializer(request.user).data
+    }, status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def check_username_view(request):
+    """사용자명 중복 확인"""
+    username = request.data.get('username')
+    if not username:
+        return Response({
+            'error': '사용자명을 입력해주세요.'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    is_available = not User.objects.filter(username=username).exists()
+    return Response({
+        'available': is_available,
+        'message': '사용 가능한 아이디입니다.' if is_available else '이미 사용 중인 아이디입니다.'
     }, status=status.HTTP_200_OK)

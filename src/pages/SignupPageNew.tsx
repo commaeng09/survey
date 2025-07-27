@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth, type SignupData } from '../contexts/AuthContextNew';
+import apiRequest from '../services/api';
 
 export default function SignupPage() {
   const [formData, setFormData] = useState({
@@ -13,12 +14,49 @@ export default function SignupPage() {
     organization: ''
   });
   const [error, setError] = useState('');
+  const [usernameStatus, setUsernameStatus] = useState<{
+    checking: boolean;
+    available?: boolean;
+    message?: string;
+  }>({ checking: false });
   const { signup, isLoading } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // 사용자명 변경 시 중복 확인
+    if (name === 'username' && value.length >= 3) {
+      checkUsername(value);
+    } else if (name === 'username') {
+      setUsernameStatus({ checking: false });
+    }
+  };
+
+  const checkUsername = async (username: string) => {
+    setUsernameStatus({ checking: true });
+    try {
+      const response = await fetch('https://survey-production-c653.up.railway.app/api/auth/check-username/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username }),
+      });
+      const data = await response.json();
+      setUsernameStatus({
+        checking: false,
+        available: data.available,
+        message: data.message
+      });
+    } catch (error) {
+      setUsernameStatus({
+        checking: false,
+        available: false,
+        message: '중복 확인 중 오류가 발생했습니다.'
+      });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -64,10 +102,24 @@ export default function SignupPage() {
                   type="text"
                   required
                   placeholder="영문, 숫자를 포함한 4-20자"
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className={`appearance-none block w-full px-3 py-2 border rounded-md placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 sm:text-sm ${
+                    usernameStatus.available === true
+                      ? 'border-green-300 focus:ring-green-500 focus:border-green-500'
+                      : usernameStatus.available === false
+                      ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                      : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                  }`}
                   value={formData.username}
                   onChange={handleChange}
                 />
+                {usernameStatus.checking && (
+                  <p className="mt-1 text-sm text-gray-500">중복 확인 중...</p>
+                )}
+                {usernameStatus.message && !usernameStatus.checking && (
+                  <p className={`mt-1 text-sm ${usernameStatus.available ? 'text-green-600' : 'text-red-600'}`}>
+                    {usernameStatus.message}
+                  </p>
+                )}
               </div>
             </div>
 

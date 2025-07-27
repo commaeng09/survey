@@ -10,60 +10,6 @@ export default function DashboardPage() {
   
   // 사용자별 설문 데이터 관리
   const [surveys, setSurveys] = useState<Survey[]>([]);
-  
-  // 기본 테스트 계정용 설문들
-  const defaultSurveys: Survey[] = [
-    {
-      id: '1',
-      title: '고객 만족도 조사',
-      description: '서비스 개선을 위한 고객 만족도 설문조사입니다.',
-      status: 'published',
-      createdAt: '2025-01-15T00:00:00Z',
-      updatedAt: '2025-01-15T00:00:00Z',
-      creator: 'admin',
-      isPublic: true,
-      questions: [],
-      responses: []
-    },
-    {
-      id: '2',
-      title: '제품 피드백 수집',
-      description: '새로운 제품에 대한 사용자 피드백을 수집합니다.',
-      status: 'draft',
-      createdAt: '2025-01-10T00:00:00Z',
-      updatedAt: '2025-01-10T00:00:00Z',
-      creator: 'admin',
-      isPublic: false,
-      questions: [],
-      responses: []
-    },
-    {
-      id: '3',
-      title: '교육 과정 평가',
-      description: '온라인 교육 과정에 대한 평가 설문입니다.',
-      status: 'closed',
-      createdAt: '2025-01-05T00:00:00Z',
-      updatedAt: '2025-01-05T00:00:00Z',
-      creator: 'admin',
-      isPublic: true,
-      questions: [],
-      responses: []
-    }
-  ];
-
-  // 새 회원가입 사용자용 샘플 설문
-  const sampleSurvey: Survey = {
-    id: 'sample-1',
-    title: '환영합니다! 첫 번째 설문 샘플',
-    description: '설문지 관리 시스템을 체험해보세요. 이것은 샘플 설문입니다.',
-    status: 'draft',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    creator: user?.username || '',
-    isPublic: false,
-    questions: [],
-    responses: []
-  };
 
   useEffect(() => {
     const loadSurveys = async () => {
@@ -89,15 +35,9 @@ export default function DashboardPage() {
         const userSurveys = JSON.parse(localStorage.getItem('user_surveys') || '[]');
         const currentUserSurveys = userSurveys.filter((s: any) => s.creator === user?.username);
         
-        // 테스트 계정인지 확인
-        const isTestAccount = user?.username === 'instructor' || user?.username === 'admin';
-        
-        if (isTestAccount && currentUserSurveys.length === 0) {
-          // 테스트 계정이고 생성된 설문이 없으면 샘플 설문을 보여줌
-          setSurveys(defaultSurveys);
-        } else if (currentUserSurveys.length === 0) {
-          // 새 사용자이고 생성된 설문이 없으면 샘플 설문 1개만 보여줌
-          setSurveys([sampleSurvey]);
+        if (currentUserSurveys.length === 0) {
+          // 새 사용자이고 생성된 설문이 없으면 빈 배열을 보여줌
+          setSurveys([]);
         } else {
           // 사용자가 생성한 설문이 있으면 그것을 보여줌
           const mappedSurveys = currentUserSurveys.map((s: any) => ({

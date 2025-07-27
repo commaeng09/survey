@@ -1,5 +1,5 @@
 // API 기본 설정
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://survey-production-c653.up.railway.app/api';
 
 // API 요청 헬퍼 함수
 const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
@@ -101,6 +101,13 @@ export const surveyAPI = {
   // 설문조사 응답 목록
   getResponses: (id: string) =>
     apiRequest(`/surveys/${id}/responses/`),
+  
+  // 사용자명 중복 확인
+  checkUsername: (username: string) =>
+    apiRequest(`/auth/check-username/`, {
+      method: 'POST',
+      body: JSON.stringify({ username }),
+    }),
 };
 
 export default apiRequest;
