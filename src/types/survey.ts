@@ -14,9 +14,27 @@ export interface Survey {
   title: string;
   description: string;
   questions: Question[];
-  createdAt: Date;
-  updatedAt: Date;
+  creator: string;
+  isPublic: boolean;
   status: 'draft' | 'published' | 'closed';
-  startDate?: Date; // 배포 시작일
-  endDate?: Date;   // 배포 종료일
+  createdAt: string;
+  updatedAt: string;
+  responses: SurveyResponse[];
+  startDate?: string;
+  endDate?: string;
+}
+
+// 설문 응답 타입
+export interface SurveyResponse {
+  id: string;
+  surveyId: string;
+  respondentId?: string;
+  answers: Answer[];
+  submittedAt: string;
+}
+
+// 답변 타입
+export interface Answer {
+  questionId: string;
+  value: string | string[];
 }

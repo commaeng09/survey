@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContextNew';
+import { surveyAPI } from '../services/api';
 
 interface Survey {
   id: string;
@@ -13,6 +14,7 @@ interface Survey {
 
 export default function DashboardPage() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   
   // 사용자별 설문 데이터 관리
   const [surveys, setSurveys] = useState<Survey[]>([]);
@@ -56,31 +58,61 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    // 테스트 계정인지 확인
-    const isTestAccount = user?.username === 'instructor' || user?.username === 'admin';
-    
-    if (isTestAccount) {
-      // 테스트 계정은 모든 샘플 설문을 보여줌
-      setSurveys(defaultSurveys);
-    } else {
-      // 새 사용자는 샘플 설문 1개만 보여줌
-      setSurveys([sampleSurvey]);
+    const loadSurveys = async () => {
+      try {
+        // 먼저 백엔드에서 설문 목록을 가져오려고 시도
+        const backendSurveys = await surveyAPI.getMySurveys();
+        
+        // 백엔드 데이터를 대시보드 형식으로 변환
+        const mappedSurveys = backendSurveys.map((s: any) => ({
+          id: s.id,
+          title: s.title,
+          description: s.description,
+          status: s.status === 'published' ? 'active' : s.status,
+          createdAt: s.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
+          responses: s.responses?.length || 0
+        }));
+        
+        setSurveys(mappedSurveys);
+      } catch (error) {
+        console.log('백엔드 연결 실패, 로컬 데이터 사용:', error);
+        
+        // 백엔드 연결 실패 시 로컬 스토리지 사용
+        const userSurveys = JSON.parse(localStorage.getItem('user_surveys') || '[]');
+        const currentUserSurveys = userSurveys.filter((s: any) => s.creator === user?.username);
+        
+        // 테스트 계정인지 확인
+        const isTestAccount = user?.username === 'instructor' || user?.username === 'admin';
+        
+        if (isTestAccount && currentUserSurveys.length === 0) {
+          // 테스트 계정이고 생성된 설문이 없으면 샘플 설문을 보여줌
+          setSurveys(defaultSurveys);
+        } else if (currentUserSurveys.length === 0) {
+          // 새 사용자이고 생성된 설문이 없으면 샘플 설문 1개만 보여줌
+          setSurveys([sampleSurvey]);
+        } else {
+          // 사용자가 생성한 설문이 있으면 그것을 보여줌
+          const mappedSurveys = currentUserSurveys.map((s: any) => ({
+            id: s.id,
+            title: s.title,
+            description: s.description,
+            status: s.status === 'published' ? 'active' : s.status,
+            createdAt: s.createdAt.split('T')[0],
+            responses: s.responses?.length || 0
+          }));
+          setSurveys(mappedSurveys);
+        }
+      }
+    };
+
+    if (user) {
+      loadSurveys();
     }
   }, [user]);
 
   const handleCreateSurvey = () => {
-    // 새 설문 만들기 기능
-    const newSurvey: Survey = {
-      id: `survey-${Date.now()}`,
-      title: '새 설문조사',
-      description: '설문조사 설명을 입력하세요.',
-      status: 'draft',
-      createdAt: new Date().toISOString().split('T')[0],
-      responses: 0
-    };
-    
-    setSurveys(prev => [newSurvey, ...prev]);
-    alert('새 설문이 생성되었습니다!');
+    // 설문 생성 페이지로 이동
+    navigate('/survey/create');
   };
 
   const handleEditSurvey = (surveyId: string) => {
@@ -95,10 +127,24 @@ export default function DashboardPage() {
     alert(`설문 ${surveyId} 공유 기능 (개발 예정)`);
   };
 
-  const handleDeleteSurvey = (surveyId: string) => {
+  const handleDeleteSurvey = async (surveyId: string) => {
     if (confirm('정말로 이 설문을 삭제하시겠습니까?')) {
-      setSurveys(prev => prev.filter(s => s.id !== surveyId));
-      alert('설문이 삭제되었습니다.');
+      try {
+        // 백엔드 API로 삭제 시도
+        await surveyAPI.deleteSurvey(surveyId);
+        setSurveys(prev => prev.filter(s => s.id !== surveyId));
+        alert('설문이 삭제되었습니다.');
+      } catch (error) {
+        console.log('백엔드 삭제 실패, 로컬에서 삭제:', error);
+        
+        // 백엔드 실패 시 로컬 스토리지에서 삭제
+        const userSurveys = JSON.parse(localStorage.getItem('user_surveys') || '[]');
+        const updatedSurveys = userSurveys.filter((s: any) => s.id !== surveyId);
+        localStorage.setItem('user_surveys', JSON.stringify(updatedSurveys));
+        
+        setSurveys(prev => prev.filter(s => s.id !== surveyId));
+        alert('설문이 삭제되었습니다. (로컬)');
+      }
     }
   };
 

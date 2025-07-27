@@ -148,34 +148,6 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Demo Account Info */}
-        {!isAuthenticated && (
-          <div className="mt-16 bg-white rounded-lg shadow-sm border p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 text-center">
-              테스트 계정으로 체험해보세요
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-gray-50 rounded-md p-4">
-                <h4 className="font-medium text-gray-900 mb-2">강사 계정</h4>
-                <p className="text-sm text-gray-600 mb-2">
-                  아이디: <code className="bg-gray-200 px-2 py-1 rounded">instructor</code>
-                </p>
-                <p className="text-sm text-gray-600">
-                  비밀번호: <code className="bg-gray-200 px-2 py-1 rounded">password123</code>
-                </p>
-              </div>
-              <div className="bg-gray-50 rounded-md p-4">
-                <h4 className="font-medium text-gray-900 mb-2">관리자 계정</h4>
-                <p className="text-sm text-gray-600 mb-2">
-                  아이디: <code className="bg-gray-200 px-2 py-1 rounded">admin</code>
-                </p>
-                <p className="text-sm text-gray-600">
-                  비밀번호: <code className="bg-gray-200 px-2 py-1 rounded">admin123</code>
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
       </main>
 
       {/* Footer */}
