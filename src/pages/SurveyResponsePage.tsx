@@ -55,6 +55,22 @@ const MOCK_SURVEYS: Survey[] = [
     responses: [],
     startDate: '2025-01-10T09:00:00Z',
     endDate: '2025-01-18T18:00:00Z'
+  },
+  // UUID 형태 테스트 데이터 추가
+  {
+    id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+    title: '🧪 테스트 설문조사 (UUID)',
+    description: 'UUID 형태 ID로 백엔드 API 테스트용 설문조사입니다.',
+    questions: [
+      { id: 'q1', type: 'short-text', title: '이름을 입력해주세요', required: true },
+      { id: 'q2', type: 'multiple-choice', title: '이 테스트가 도움이 되었나요?', required: true, options: ['매우 도움됨', '도움됨', '보통', '도움안됨'] }
+    ],
+    creator: 'test',
+    isPublic: true,
+    createdAt: '2025-07-28T00:00:00Z',
+    updatedAt: '2025-07-28T00:00:00Z',
+    status: 'published',
+    responses: []
   }
 ];
 

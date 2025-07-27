@@ -140,6 +140,12 @@ export default function DashboardPage() {
   };
 
   const copyShareLink = (surveyId: string) => {
+    // 로컬 저장소 데이터인지 확인 (survey- 접두사가 있는 경우)
+    if (surveyId.startsWith('survey-')) {
+      alert('⚠️ 이 설문조사는 로컬에만 저장되어 있습니다.\n실제 공유하려면 백엔드에 연결된 상태에서 설문조사를 다시 생성해주세요.');
+      return;
+    }
+    
     const shareUrl = `${window.location.origin}/survey/${surveyId}`;
     navigator.clipboard.writeText(shareUrl).then(() => {
       alert('설문 링크가 클립보드에 복사되었습니다!');
@@ -340,6 +346,11 @@ export default function DashboardPage() {
                       <h3 className="text-lg font-medium text-gray-900 mr-3">
                         {survey.title}
                       </h3>
+                      {survey.id.startsWith('survey-') && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 mr-2">
+                          💾 로컬
+                        </span>
+                      )}
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(survey.status)}`}>
                         {getStatusText(survey.status)}
                       </span>
