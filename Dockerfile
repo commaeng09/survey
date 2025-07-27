@@ -1,32 +1,44 @@
-# Render.com 최적화된 간단한 Dockerfile
+# Render.com PostgreSQL 최적화 Dockerfile
 FROM python:3.11-slim
 
 # 환경변수 설정
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV DEBIAN_FRONTEND=noninteractive
+ENV PG_CONFIG=/usr/bin/pg_config
 
 # 작업 디렉토리 설정
 WORKDIR /app
 
-# 시스템 의존성 설치 (PostgreSQL 지원 포함)
-RUN apt-get update && apt-get install -y \
-    postgresql-client \
-    postgresql-server-dev-all \
-    gcc \
-    g++ \
-    python3-dev \
-    libpq-dev \
-    pkg-config \
-    build-essential \
+# 시스템 업데이트 및 PostgreSQL 전체 스택 설치
+RUN apt-get update -y && apt-get upgrade -y \
+    && apt-get install -y --no-install-recommends \
+        postgresql \
+        postgresql-contrib \
+        postgresql-client \
+        postgresql-server-dev-all \
+        libpq-dev \
+        gcc \
+        g++ \
+        make \
+        python3-dev \
+        python3-pip \
+        pkg-config \
+        build-essential \
+        libc6-dev \
+        libssl-dev \
+        libffi-dev \
     && rm -rf /var/lib/apt/lists/*
 
+# PostgreSQL 설정 확인
+RUN which pg_config && pg_config --version
+
 # pip 업그레이드
-RUN pip install --upgrade pip
+RUN pip install --upgrade pip setuptools wheel
 
 # requirements 복사 및 설치
 COPY backend/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --verbose -r requirements.txt
 
 # 백엔드 코드 복사
 COPY backend/ .
