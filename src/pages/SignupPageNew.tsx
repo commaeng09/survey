@@ -10,7 +10,9 @@ export default function SignupPage() {
     name: '',
     first_name: '',
     last_name: '',
-    organization: ''
+    organization: '',
+    email: '',
+    user_type: 'student'
   });
   const [error, setError] = useState('');
   const [usernameStatus, setUsernameStatus] = useState<{
@@ -62,8 +64,40 @@ export default function SignupPage() {
     e.preventDefault();
     setError('');
 
+    // 사용자명 중복 확인
+    if (usernameStatus.available === false) {
+      setError('이미 사용 중인 아이디입니다. 다른 아이디를 선택해주세요.');
+      return;
+    }
+
     if (formData.password !== formData.password_confirm) {
       setError('비밀번호가 일치하지 않습니다.');
+      return;
+    }
+
+    // 아이디 길이 확인
+    if (formData.username.length < 3) {
+      setError('아이디는 3자 이상이어야 합니다.');
+      return;
+    }
+
+    // 마지막으로 중복 확인
+    try {
+      const checkResponse = await fetch('https://survey-production-c653.up.railway.app/api/auth/check-username/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username: formData.username }),
+      });
+      const checkData = await checkResponse.json();
+      
+      if (!checkData.available) {
+        setError('이미 사용 중인 아이디입니다. 다른 아이디를 선택해주세요.');
+        return;
+      }
+    } catch (error) {
+      setError('아이디 중복 확인 중 오류가 발생했습니다.');
       return;
     }
 
@@ -72,7 +106,7 @@ export default function SignupPage() {
       if (success) {
         navigate('/dashboard');
       } else {
-        setError('이미 존재하는 사용자명입니다.');
+        setError('회원가입 중 오류가 발생했습니다. 다시 시도해주세요.');
       }
     } catch (err) {
       setError('회원가입 중 오류가 발생했습니다.');
@@ -134,6 +168,24 @@ export default function SignupPage() {
                   required
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   value={formData.name}
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                이메일
+              </label>
+              <div className="mt-1">
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  placeholder="your@email.com"
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  value={formData.email}
                   onChange={handleChange}
                 />
               </div>

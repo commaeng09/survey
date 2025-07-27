@@ -14,13 +14,28 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
     ...options,
   };
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
-  
-  if (!response.ok) {
-    throw new Error(`API Error: ${response.status}`);
+  try {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+    
+    if (!response.ok) {
+      if (response.status === 401) {
+        // 토큰이 만료되었거나 유효하지 않음
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+        throw new Error('Authentication required');
+      }
+      
+      const errorData = await response.text();
+      console.error(`API Error ${response.status}:`, errorData);
+      throw new Error(`API Error: ${response.status} - ${errorData}`);
+    }
+    
+    return response.json();
+  } catch (error) {
+    console.error('API Request failed:', error);
+    throw error;
   }
-  
-  return response.json();
 };
 
 // 인증 API
