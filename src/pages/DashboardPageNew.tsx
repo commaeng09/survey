@@ -99,9 +99,9 @@ export default function DashboardPage() {
               responses: []
             };
             
-            const existingSurveys = JSON.parse(localStorage.getItem(`${user?.username}_surveys`) || '[]');
+            const existingSurveys = JSON.parse(localStorage.getItem('user_surveys') || '[]');
             existingSurveys.push(newSurvey);
-            localStorage.setItem(`${user?.username}_surveys`, JSON.stringify(existingSurveys));
+            localStorage.setItem('user_surveys', JSON.stringify(existingSurveys));
             
             setSurveys(existingSurveys);
             alert('설문을 성공적으로 가져왔습니다!');

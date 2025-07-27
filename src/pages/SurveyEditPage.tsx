@@ -37,7 +37,7 @@ export default function SurveyEditPage() {
           console.log('API 호출 실패, 로컬 저장소에서 찾는 중:', apiError);
           
           // 로컬 저장소에서 설문 찾기
-          const userSurveys = JSON.parse(localStorage.getItem(`${user?.username}_surveys`) || '[]');
+          const userSurveys = JSON.parse(localStorage.getItem('user_surveys') || '[]');
           const foundSurvey = userSurveys.find((s: Survey) => s.id === id);
           
           if (foundSurvey) {
@@ -149,11 +149,11 @@ export default function SurveyEditPage() {
           updatedAt: new Date().toISOString(),
         };
 
-        const userSurveys = JSON.parse(localStorage.getItem(`${user?.username}_surveys`) || '[]');
+        const userSurveys = JSON.parse(localStorage.getItem('user_surveys') || '[]');
         const updatedSurveys = userSurveys.map((s: Survey) => 
           s.id === id ? updatedSurvey : s
         );
-        localStorage.setItem(`${user?.username}_surveys`, JSON.stringify(updatedSurveys));
+        localStorage.setItem('user_surveys', JSON.stringify(updatedSurveys));
 
         alert(`백엔드 연결 실패. 로컬에 ${status === 'draft' ? '임시저장' : '저장'}되었습니다.`);
         navigate('/dashboard');
