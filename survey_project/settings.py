@@ -12,13 +12,21 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-me-in-producti
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,healthcheck.railway.app').split(',')
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,healthcheck.railway.app,survey-production-c653.up.railway.app').split(',')
 
 # Railway에서 자동으로 설정하는 환경변수들을 ALLOWED_HOSTS에 추가
 import os
 railway_domain = os.environ.get('RAILWAY_PUBLIC_DOMAIN')
+railway_service_domain = os.environ.get('RAILWAY_SERVICE_DOMAIN')
 if railway_domain:
     ALLOWED_HOSTS.append(railway_domain)
+if railway_service_domain:
+    ALLOWED_HOSTS.append(railway_service_domain)
+
+# Railway 기본 도메인 패턴도 추가
+railway_static_url = os.environ.get('RAILWAY_STATIC_URL')
+if railway_static_url:
+    ALLOWED_HOSTS.append(railway_static_url)
 
 # Application definition
 DJANGO_APPS = [
@@ -185,7 +193,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:5173",
     "http://localhost:5174",
     "http://127.0.0.1:5174",
-    "https://survey-zeta-seven.vercel.app",  # 실제 Vercel 도메인
+    "https://survey-zeta-seven.vercel.app",  # 이전 Vercel 도메인
+    "https://survey-amz9fv00u-commaeng09s-projects.vercel.app",  # 현재 Vercel 도메인
 ]
 
 CORS_ALLOW_CREDENTIALS = True
