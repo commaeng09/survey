@@ -1,5 +1,5 @@
-// API 기본 설정 - Render.com 새로운 백엔드
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://survey-backend-dgiy.onrender.com/api';
+// API 기본 설정 - Render.com 새로운 백엔드 (하드코딩)
+const API_BASE_URL = 'https://survey-backend-dgiy.onrender.com/api';
 
 // API 요청 헬퍼 함수
 const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
