@@ -2,11 +2,10 @@
 services:
   - type: web
     name: survey-backend
-    env: python
+    env: docker
     plan: free
     region: oregon
-    buildCommand: "cd backend && pip install -r requirements.txt && python manage.py collectstatic --noinput"
-    startCommand: "cd backend && python manage.py migrate && gunicorn survey_project.wsgi:application --bind 0.0.0.0:$PORT"
+    dockerfilePath: ./Dockerfile
     envVars:
       - key: DEBUG
         value: False
