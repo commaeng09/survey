@@ -4,6 +4,10 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://survey-production-
 // API 요청 헬퍼 함수
 const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
   const token = localStorage.getItem('authToken');
+  const user = localStorage.getItem('user');
+  
+  console.log('🔑 Current token:', token ? 'EXISTS' : 'NOT_FOUND');
+  console.log('👤 Current user:', user ? JSON.parse(user) : 'NOT_FOUND');
   
   const config: RequestInit = {
     headers: {
@@ -15,11 +19,17 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
   };
 
   try {
+    console.log(`🚀 API Request: ${config.method || 'GET'} ${API_BASE_URL}${endpoint}`);
+    console.log('📝 Request config:', config);
+    
     const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+    
+    console.log(`📡 Response status: ${response.status}`);
     
     if (!response.ok) {
       if (response.status === 401) {
         // 토큰이 만료되었거나 유효하지 않음
+        console.warn('🔒 Authentication failed - removing tokens');
         localStorage.removeItem('authToken');
         localStorage.removeItem('user');
         window.location.href = '/login';
@@ -27,13 +37,15 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
       }
       
       const errorData = await response.text();
-      console.error(`API Error ${response.status}:`, errorData);
+      console.error(`❌ API Error ${response.status}:`, errorData);
       throw new Error(`API Error: ${response.status} - ${errorData}`);
     }
     
-    return response.json();
+    const result = await response.json();
+    console.log('✅ API Response:', result);
+    return result;
   } catch (error) {
-    console.error('API Request failed:', error);
+    console.error('💥 API Request failed:', error);
     throw error;
   }
 };

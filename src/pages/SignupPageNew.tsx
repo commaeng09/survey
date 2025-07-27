@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth, type SignupData } from '../contexts/AuthContextNew';
+import { surveyAPI } from '../services/api';
 
 export default function SignupPage() {
   const [formData, setFormData] = useState({
@@ -28,30 +29,43 @@ export default function SignupPage() {
     setFormData(prev => ({ ...prev, [name]: value }));
     
     // 사용자명 변경 시 중복 확인
-    if (name === 'username' && value.length >= 3) {
-      checkUsername(value);
-    } else if (name === 'username') {
-      setUsernameStatus({ checking: false });
+    if (name === 'username') {
+      if (value.length >= 3) {
+        checkUsername(value);
+      } else {
+        setUsernameStatus({ 
+          checking: false, 
+          available: false, 
+          message: value.length > 0 ? '아이디는 3자 이상이어야 합니다.' : '' 
+        });
+      }
     }
   };
 
   const checkUsername = async (username: string) => {
-    setUsernameStatus({ checking: true });
-    try {
-      const response = await fetch('https://survey-production-c653.up.railway.app/api/auth/check-username/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username }),
-      });
-      const data = await response.json();
+    if (username.length < 3) {
       setUsernameStatus({
         checking: false,
-        available: data.available,
-        message: data.message
+        available: false,
+        message: '아이디는 3자 이상이어야 합니다.'
+      });
+      return;
+    }
+
+    setUsernameStatus({ checking: true });
+    
+    try {
+      console.log('🔍 Checking username:', username);
+      const response = await surveyAPI.checkUsername(username);
+      console.log('✅ Username check response:', response);
+      
+      setUsernameStatus({
+        checking: false,
+        available: response.available,
+        message: response.message
       });
     } catch (error) {
+      console.error('❌ Username check failed:', error);
       setUsernameStatus({
         checking: false,
         available: false,
@@ -64,40 +78,27 @@ export default function SignupPage() {
     e.preventDefault();
     setError('');
 
-    // 사용자명 중복 확인
-    if (usernameStatus.available === false) {
-      setError('이미 사용 중인 아이디입니다. 다른 아이디를 선택해주세요.');
-      return;
-    }
-
-    if (formData.password !== formData.password_confirm) {
-      setError('비밀번호가 일치하지 않습니다.');
-      return;
-    }
-
     // 아이디 길이 확인
     if (formData.username.length < 3) {
       setError('아이디는 3자 이상이어야 합니다.');
       return;
     }
 
-    // 마지막으로 중복 확인
-    try {
-      const checkResponse = await fetch('https://survey-production-c653.up.railway.app/api/auth/check-username/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username: formData.username }),
-      });
-      const checkData = await checkResponse.json();
-      
-      if (!checkData.available) {
-        setError('이미 사용 중인 아이디입니다. 다른 아이디를 선택해주세요.');
-        return;
-      }
-    } catch (error) {
-      setError('아이디 중복 확인 중 오류가 발생했습니다.');
+    // 사용자명 중복 확인 - 명시적으로 체크
+    console.log('🔍 Final username status check:', usernameStatus);
+    
+    if (usernameStatus.checking) {
+      setError('아이디 중복 확인 중입니다. 잠시 기다려주세요.');
+      return;
+    }
+    
+    if (usernameStatus.available !== true) {
+      setError('아이디 중복 확인이 필요하거나 이미 사용 중인 아이디입니다.');
+      return;
+    }
+
+    if (formData.password !== formData.password_confirm) {
+      setError('비밀번호가 일치하지 않습니다.');
       return;
     }
 
