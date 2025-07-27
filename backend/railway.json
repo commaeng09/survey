@@ -4,9 +4,9 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "python manage.py collectstatic --noinput && python manage.py migrate && gunicorn survey_project.wsgi:application --bind 0.0.0.0:$PORT",
-    "healthcheckPath": "/api/health/",
-    "healthcheckTimeout": 100,
+    "startCommand": "python manage.py collectstatic --noinput && python manage.py migrate && gunicorn survey_project.wsgi:application -c gunicorn.conf.py",
+    "healthcheckPath": "/admin/",
+    "healthcheckTimeout": 300,
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
   }
