@@ -18,7 +18,7 @@ services:
           name: survey-db
           property: connectionString
       - key: CORS_ALLOWED_ORIGINS
-        value: "https://survey-zeta-seven.vercel.app,https://survey-amz9fv00u-commaeng09s-projects.vercel.app"
+        value: "https://survey-new-wheat.vercel.app,https://survey-zeta-seven.vercel.app,https://survey-amz9fv00u-commaeng09s-projects.vercel.app"
 
 databases:
   - name: survey-db

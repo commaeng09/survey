@@ -1,11 +1,15 @@
-// API 기본 설정 - Render.com 새로운 백엔드 (2025-01-27 핵폭탄 버전)
-// 캐시 버스터: v2.0.0-render-force-update  
-// ⚡ VERCEL 캐시 무시하고 강제로 새 URL 사용
-const FORCE_NEW_API_URL = 'https://survey-backend-dgiy.onrender.com/api';
-const API_BASE_URL = FORCE_NEW_API_URL; // 완전 하드코딩으로 강제!
+// API 기본 설정 - Render.com 새로운 백엔드 (2025-01-27 최종 버전)
+// 새 Vercel 도메인: https://survey-new-wheat.vercel.app
+// 캐시 버스터: v2.1.0-new-vercel-domain
 
-console.log('🎯 FINAL API URL:', API_BASE_URL);
-console.log('🔥 Force URL:', FORCE_NEW_API_URL);
+// 완전히 새로운 API URL 설정 방식
+const RENDER_API_BASE = 'https://survey-backend-dgiy.onrender.com/api';
+const API_BASE_URL = RENDER_API_BASE;
+
+// 디버깅용 로그
+console.log('� NEW VERCEL DOMAIN: https://survey-new-wheat.vercel.app');
+console.log('🎯 API BASE URL:', API_BASE_URL);
+console.log('🔥 RENDER URL:', RENDER_API_BASE);
 
 // API 요청 헬퍼 함수
 const apiRequest = async (endpoint: string, options: RequestInit = {}) => {

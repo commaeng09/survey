@@ -204,6 +204,7 @@ CORS_PREFLIGHT_MAX_AGE = 86400
 
 # Backup whitelist for Render
 CORS_ALLOWED_ORIGINS = [
+    "https://survey-new-wheat.vercel.app",  # 새로운 Vercel 도메인
     "https://survey-zeta-seven.vercel.app",
     "https://survey-amz9fv00u-commaeng09s-projects.vercel.app",
     "http://localhost:3000",
@@ -235,6 +236,7 @@ if not DEBUG:
 
 # CSRF settings for CORS - Render optimized
 CSRF_TRUSTED_ORIGINS = [
+    "https://survey-new-wheat.vercel.app",  # 새로운 Vercel 도메인
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "http://localhost:5173",
