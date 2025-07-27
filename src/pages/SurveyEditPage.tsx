@@ -5,6 +5,19 @@ import { surveyAPI } from '../services/api';
 import QuestionEditor from '../components/QuestionEditor';
 import type { Survey, Question } from '../types/survey';
 
+// 프론트엔드 질문 타입을 백엔드 타입으로 매핑
+const mapQuestionType = (frontendType: string) => {
+  const typeMap: { [key: string]: string } = {
+    'short-text': 'text',
+    'long-text': 'textarea',
+    'multiple-choice': 'radio',
+    'checkbox': 'checkbox',
+    'dropdown': 'dropdown',
+    'rating': 'rating'
+  };
+  return typeMap[frontendType] || 'text';
+};
+
 export default function SurveyEditPage() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
@@ -126,9 +139,16 @@ export default function SurveyEditPage() {
       const surveyData = {
         title: survey.title,
         description: survey.description || '',
-        questions: survey.questions,
+        questions: survey.questions?.map((q, index) => ({
+          text: q.title,
+          description: q.description || '',
+          type: mapQuestionType(q.type),
+          required: q.required,
+          order: index + 1,
+          options: q.options || []
+        })),
         is_public: isPublic,
-        status: status
+        status: status === 'published' ? 'active' : 'draft'
       };
 
       await surveyAPI.updateSurvey(id!, surveyData);

@@ -1,13 +1,29 @@
-// API 기본 설정
-const LOCAL_API_BASE = 'http://127.0.0.1:8000/api';
-const RENDER_API_BASE = 'https://survey-backend-dgiy.onrender.com/api';
-const API_BASE_URL = RENDER_API_BASE; // 실제 서비스용으로 변경
+// API 기본 설정 - 로컬 테스트용
+// 새 Vercel 도메인: https://survey-new-wheat.vercel.app
+// 캐시 버스터: v2.1.0-new-vercel-domain
 
-console.log('� PRODUCTION MODE: Using', API_BASE_URL);
+// 로컬 테스트를 위한 API URL 설정
+const RENDER_API_BASE = 'https://survey-backend-dgiy.onrender.com/api';
+const LOCAL_API_BASE = 'http://127.0.0.1:8000/api';
+const API_BASE_URL = LOCAL_API_BASE; // 로컬 테스트용으로 변경
+
+// 디버깅용 로그
+console.log('🔧 LOCAL TEST MODE: Using', API_BASE_URL);
+const RENDER_API_BASE = 'https://survey-backend-dgiy.onrender.com/api';
+const API_BASE_URL = RENDER_API_BASE;
+
+// 디버깅용 로그
+console.log('� NEW VERCEL DOMAIN: https://survey-new-wheat.vercel.app');
+console.log('🎯 API BASE URL:', API_BASE_URL);
+console.log('🔥 RENDER URL:', RENDER_API_BASE);
 
 // API 요청 헬퍼 함수
 const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
   const token = localStorage.getItem('authToken');
+  const user = localStorage.getItem('user');
+  
+  console.log('🔑 Current token:', token ? 'EXISTS' : 'NOT_FOUND');
+  console.log('👤 Current user:', user ? JSON.parse(user) : 'NOT_FOUND');
   
   const config: RequestInit = {
     headers: {
@@ -20,12 +36,15 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
 
   try {
     console.log(`🚀 API Request: ${config.method || 'GET'} ${API_BASE_URL}${endpoint}`);
+    console.log('📝 Request config:', config);
     
     const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+    
     console.log(`📡 Response status: ${response.status}`);
     
     if (!response.ok) {
       if (response.status === 401) {
+        // 토큰이 만료되었거나 유효하지 않음
         console.warn('🔒 Authentication failed - removing tokens');
         localStorage.removeItem('authToken');
         localStorage.removeItem('user');
@@ -54,16 +73,19 @@ export const authAPI = {
       method: 'POST',
       body: JSON.stringify(credentials),
     }),
+  
   register: (userData: { username: string; email: string; password: string; password_confirm: string; first_name: string; last_name: string }) =>
     apiRequest('/auth/register/', {
       method: 'POST',
       body: JSON.stringify(userData),
     }),
+  
   logout: (refreshToken: string) =>
     apiRequest('/auth/logout/', {
       method: 'POST',
       body: JSON.stringify({ refresh: refreshToken }),
     }),
+  
   getProfile: () => apiRequest('/auth/profile/'),
 };
 

@@ -1,0 +1,23 @@
+{
+  "title": "테스트 설문조사",
+  "description": "API 테스트용 설문조사입니다.",
+  "status": "draft",
+  "questions": [
+    {
+      "text": "첫 번째 질문",
+      "description": "단답형 질문입니다.",
+      "type": "text",
+      "required": true,
+      "order": 1,
+      "options": []
+    },
+    {
+      "text": "두 번째 질문",
+      "description": "객관식 질문입니다.",
+      "type": "radio",
+      "required": true,
+      "order": 2,
+      "options": ["선택지 1", "선택지 2", "선택지 3"]
+    }
+  ]
+}
