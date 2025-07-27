@@ -1,113 +1,150 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { surveyAPI } from '../services/api';
 import type { Survey, Question } from '../types/survey';
-
-// 임시 설문지 데이터 (실제로는 API에서 가져올 데이터)
-const MOCK_SURVEYS: Survey[] = [
-  {
-    id: '1',
-    title: '교육 만족도 조사',
-    description: '이번 분기 교육과정에 대한 훈련생들의 만족도를 조사합니다.',
-    questions: [
-      { id: 'q1', type: 'rating', title: '전반적인 교육 만족도는?', required: true },
-      { id: 'q2', type: 'multiple-choice', title: '가장 도움이 된 과목은?', required: true, options: ['프로그래밍', '데이터베이스', '네트워크'] },
-      { id: 'q3', type: 'long-text', title: '개선사항이 있다면 자유롭게 작성해주세요.', required: false }
-    ],
-    createdAt: new Date('2025-01-20'),
-    updatedAt: new Date('2025-01-22'),
-    status: 'published'
-  },
-  {
-    id: '2',
-    title: '온라인 강의 피드백',
-    description: '온라인 강의 시스템에 대한 피드백을 수집합니다.',
-    questions: [
-      { id: 'q1', type: 'rating', title: '온라인 강의 화질은 어땠나요?', required: true },
-      { id: 'q2', type: 'checkbox', title: '어떤 기능이 필요하다고 생각하시나요?', required: false, options: ['화면 공유', '채팅', '녹화 기능', '퀴즈'] }
-    ],
-    createdAt: new Date('2025-01-15'),
-    updatedAt: new Date('2025-01-15'),
-    status: 'draft'
-  },
-  {
-    id: '3',
-    title: '취업 준비 현황 조사',
-    description: '훈련생들의 취업 준비 현황과 지원 필요 사항을 파악합니다.',
-    questions: [
-      { id: 'q1', type: 'multiple-choice', title: '현재 취업 준비 단계는?', required: true, options: ['이력서 작성', '포트폴리오 준비', '면접 준비', '취업 완료'] },
-      { id: 'q2', type: 'short-text', title: '희망하는 직무는?', required: true }
-    ],
-    createdAt: new Date('2025-01-10'),
-    updatedAt: new Date('2025-01-18'),
-    status: 'closed'
-  }
-];
-
-// 임시 응답 데이터
-const MOCK_ANALYTICS = {
-  '1': {
-    totalResponses: 42,
-    completionRate: 93.3,
-    averageTime: 8.5, // 분
-    responses: {
-      'q1': {
-        type: 'rating',
-        data: [2, 5, 12, 18, 5], // 1점부터 5점까지 응답 수
-        average: 3.7
-      },
-      'q2': {
-        type: 'multiple-choice',
-        data: {
-          '프로그래밍': 18,
-          '데이터베이스': 15,
-          '네트워크': 9
-        }
-      },
-      'q3': {
-        type: 'long-text',
-        responses: [
-          '실습 시간이 더 필요합니다',
-          '프로젝트 기반 학습이 도움이 됩니다',
-          '온라인 자료를 더 제공해주세요',
-          '멘토링 시간을 늘려주세요'
-        ]
-      }
-    }
-  },
-  '3': {
-    totalResponses: 35,
-    completionRate: 92.1,
-    averageTime: 5.2,
-    responses: {
-      'q1': {
-        type: 'multiple-choice',
-        data: {
-          '이력서 작성': 8,
-          '포트폴리오 준비': 15,
-          '면접 준비': 9,
-          '취업 완료': 3
-        }
-      },
-      'q2': {
-        type: 'short-text',
-        responses: [
-          '프론트엔드 개발자',
-          '백엔드 개발자',
-          '풀스택 개발자',
-          '데이터 분석가',
-          'UI/UX 디자이너'
-        ]
-      }
-    }
-  }
-};
 
 export default function AnalyticsPage() {
   const { id } = useParams<{ id: string }>();
   const [selectedPeriod, setSelectedPeriod] = useState<'7d' | '30d' | '90d' | 'all'>('30d');
+  const [survey, setSurvey] = useState<Survey | null>(null);
+  const [analytics, setAnalytics] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const survey = MOCK_SURVEYS.find(s => s.id === id);
-  const analytics = MOCK_ANALYTICS[id as keyof typeof MOCK_ANALYTICS];
+  useEffect(() => {
+    const fetchSurveyAndAnalytics = async () => {
+      if (!id) return;
+      
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // 설문지 정보 가져오기 (API 우선, 실패시 로컬 저장소)
+        let surveyData: Survey | null = null;
+        try {
+          surveyData = await surveyAPI.getSurvey(id);
+        } catch (apiError) {
+          console.log('API 호출 실패, 로컬 데이터 사용:', apiError);
+          // 로컬 저장소에서 설문지 데이터 가져오기
+          const allSurveys = JSON.parse(localStorage.getItem('surveys') || '[]');
+          surveyData = allSurveys.find((s: Survey) => s.id === id) || null;
+        }
+        
+        if (!surveyData) {
+          setError('설문지를 찾을 수 없습니다.');
+          return;
+        }
+        
+        setSurvey(surveyData);
+
+        // 분석 데이터 가져오기 (실제 API가 있다면)
+        try {
+          const analyticsData = await surveyAPI.getAnalytics(id);
+          setAnalytics(analyticsData);
+        } catch (analyticsError) {
+          console.log('Analytics API 호출 실패, 로컬 데이터 처리:', analyticsError);
+          // 로컬 저장소에서 응답 데이터 가져오기
+          const responses = JSON.parse(localStorage.getItem(`survey_responses_${id}`) || '[]');
+          if (responses.length > 0) {
+            const processedAnalytics = processResponsesForAnalytics(surveyData, responses);
+            setAnalytics(processedAnalytics);
+          } else {
+            setAnalytics(null);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching survey analytics:', err);
+        setError('분석 데이터를 가져오는 중 오류가 발생했습니다.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSurveyAndAnalytics();
+  }, [id]);
+
+  const processResponsesForAnalytics = (survey: Survey, responses: any[]) => {
+    const analytics: any = {
+      totalResponses: responses.length,
+      completionRate: 100, // 완료된 응답만 저장되므로 100%
+      averageTime: Math.random() * 10 + 5, // 임시값
+      responses: {}
+    };
+
+    survey.questions.forEach(question => {
+      const questionResponses = responses.map(r => r.answers[question.id]).filter(Boolean);
+      
+      switch (question.type) {
+        case 'rating':
+          const ratings = questionResponses.map(r => parseInt(r)).filter(r => !isNaN(r));
+          analytics.responses[question.id] = {
+            type: 'rating',
+            data: [1, 2, 3, 4, 5].map(rating => ratings.filter(r => r === rating).length),
+            average: ratings.length > 0 ? ratings.reduce((sum, r) => sum + r, 0) / ratings.length : 0
+          };
+          break;
+        
+        case 'multiple-choice':
+          const choices: Record<string, number> = {};
+          question.options?.forEach(option => {
+            choices[option] = questionResponses.filter(r => r === option).length;
+          });
+          analytics.responses[question.id] = {
+            type: 'multiple-choice',
+            data: choices
+          };
+          break;
+        
+        case 'checkbox':
+          const checkboxChoices: Record<string, number> = {};
+          question.options?.forEach(option => {
+            checkboxChoices[option] = questionResponses.filter(r => 
+              Array.isArray(r) ? r.includes(option) : r === option
+            ).length;
+          });
+          analytics.responses[question.id] = {
+            type: 'checkbox',
+            data: checkboxChoices
+          };
+          break;
+        
+        case 'short-text':
+        case 'long-text':
+          analytics.responses[question.id] = {
+            type: question.type,
+            responses: questionResponses.slice(0, 10) // 최대 10개만 표시
+          };
+          break;
+      }
+    });
+
+    return analytics;
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">분석 데이터를 불러오는 중...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">오류 발생</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <Link to="/dashboard" className="text-blue-600 hover:text-blue-800">
+            대시보드로 돌아가기
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   if (!survey) {
     return (
@@ -287,8 +324,8 @@ export default function AnalyticsPage() {
           <h2 className="text-2xl font-bold text-gray-900 mb-2">{survey.title}</h2>
           <p className="text-gray-600 mb-4">{survey.description}</p>
           <div className="flex items-center space-x-6 text-sm text-gray-500">
-            <span>생성일: {survey.createdAt.toLocaleDateString('ko-KR')}</span>
-            <span>마지막 수정: {survey.updatedAt.toLocaleDateString('ko-KR')}</span>
+            <span>생성일: {new Date(survey.createdAt).toLocaleDateString('ko-KR')}</span>
+            <span>마지막 수정: {new Date(survey.updatedAt).toLocaleDateString('ko-KR')}</span>
             <span className={`px-2 py-1 rounded-full text-xs font-medium ${
               survey.status === 'published' ? 'bg-green-100 text-green-800' :
               survey.status === 'closed' ? 'bg-red-100 text-red-800' :

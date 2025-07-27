@@ -51,6 +51,9 @@ export const surveyAPI = {
   // 내 설문조사 목록
   getMySurveys: () => apiRequest('/surveys/'),
   
+  // 단일 설문조사 조회
+  getSurvey: (id: string) => apiRequest(`/surveys/${id}/`),
+  
   // 설문조사 생성
   createSurvey: (surveyData: any) =>
     apiRequest('/surveys/', {

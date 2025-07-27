@@ -1,11 +1,12 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, Link, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContextNew';
 import { surveyAPI } from '../services/api';
 import QuestionEditor from '../components/QuestionEditor';
 import type { Survey, Question } from '../types/survey';
 
-export default function SurveyCreatePage() {
+export default function SurveyEditPage() {
+  const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
   
@@ -17,7 +18,47 @@ export default function SurveyCreatePage() {
 
   const [isPublic, setIsPublic] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [showPreview, setShowPreview] = useState(false);
+
+  useEffect(() => {
+    const loadSurvey = async () => {
+      if (!id) return;
+      
+      try {
+        setIsLoading(true);
+        
+        // API에서 설문 데이터 가져오기 시도
+        try {
+          const surveyData = await surveyAPI.getSurvey(id);
+          setSurvey(surveyData);
+          setIsPublic(surveyData.isPublic || false);
+        } catch (apiError) {
+          console.log('API 호출 실패, 로컬 저장소에서 찾는 중:', apiError);
+          
+          // 로컬 저장소에서 설문 찾기
+          const userSurveys = JSON.parse(localStorage.getItem(`${user?.username}_surveys`) || '[]');
+          const foundSurvey = userSurveys.find((s: Survey) => s.id === id);
+          
+          if (foundSurvey) {
+            setSurvey(foundSurvey);
+            setIsPublic(foundSurvey.isPublic || false);
+          } else {
+            alert('설문을 찾을 수 없습니다.');
+            navigate('/dashboard');
+          }
+        }
+      } catch (error) {
+        console.error('설문 로드 실패:', error);
+        alert('설문을 불러오는 중 오류가 발생했습니다.');
+        navigate('/dashboard');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadSurvey();
+  }, [id, user?.username, navigate]);
 
   const addQuestion = () => {
     const newQuestion: Question = {
@@ -81,7 +122,7 @@ export default function SurveyCreatePage() {
     setIsSaving(true);
 
     try {
-      // Django API에 설문 생성 요청
+      // Django API에 설문 수정 요청
       const surveyData = {
         title: survey.title,
         description: survey.description || '',
@@ -90,31 +131,29 @@ export default function SurveyCreatePage() {
         status: status
       };
 
-      await surveyAPI.createSurvey(surveyData);
+      await surveyAPI.updateSurvey(id!, surveyData);
       
       alert(status === 'draft' ? '설문이 임시저장되었습니다.' : '설문이 발행되었습니다.');
       navigate('/dashboard');
     } catch (error) {
       console.error('설문 저장 실패:', error);
       
-      // 백엔드 연결 실패 시 로컬 스토리지에 임시 저장
+      // 백엔드 연결 실패 시 로컬 스토리지에 저장
       try {
-        const newSurvey: Survey = {
-          id: `survey-${Date.now()}`,
-          title: survey.title!,
-          description: survey.description || '',
-          questions: survey.questions!,
+        const updatedSurvey: Survey = {
+          ...survey as Survey,
+          id: id!,
           creator: user?.username || '',
           isPublic,
           status: status,
-          createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
-          responses: []
         };
 
-        const existingSurveys = JSON.parse(localStorage.getItem('user_surveys') || '[]');
-        existingSurveys.push(newSurvey);
-        localStorage.setItem('user_surveys', JSON.stringify(existingSurveys));
+        const userSurveys = JSON.parse(localStorage.getItem(`${user?.username}_surveys`) || '[]');
+        const updatedSurveys = userSurveys.map((s: Survey) => 
+          s.id === id ? updatedSurvey : s
+        );
+        localStorage.setItem(`${user?.username}_surveys`, JSON.stringify(updatedSurveys));
 
         alert(`백엔드 연결 실패. 로컬에 ${status === 'draft' ? '임시저장' : '저장'}되었습니다.`);
         navigate('/dashboard');
@@ -126,6 +165,17 @@ export default function SurveyCreatePage() {
       setIsSaving(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">설문을 불러오는 중...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -140,7 +190,7 @@ export default function SurveyCreatePage() {
               >
                 ← 대시보드로 돌아가기
               </Link>
-              <h1 className="text-xl font-semibold text-gray-900">새 설문 만들기</h1>
+              <h1 className="text-xl font-semibold text-gray-900">설문 편집</h1>
             </div>
             <div className="flex items-center space-x-3">
               <button

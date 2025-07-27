@@ -108,16 +108,6 @@ export default function LoginPage() {
               </Link>
             </div>
           </form>
-
-          <div className="mt-6">
-            <div className="text-sm text-gray-600">
-              <strong>테스트 계정:</strong>
-              <div className="mt-2 space-y-1">
-                <div>강사: instructor / password123</div>
-                <div>관리자: admin / admin123</div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>

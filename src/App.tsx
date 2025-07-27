@@ -6,6 +6,7 @@ import LoginPageNew from './pages/LoginPageNew';
 import SignupPageNew from './pages/SignupPageNew';
 import DashboardPageNew from './pages/DashboardPageNew';
 import SurveyCreatePage from './pages/SurveyCreatePage';
+import SurveyEditPage from './pages/SurveyEditPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import SurveyResponsePage from './pages/SurveyResponsePage';
 
@@ -29,7 +30,12 @@ function App() {
               <SurveyCreatePage />
             </ProtectedRoute>
           } />
-          <Route path="/analytics" element={
+          <Route path="/survey/edit/:id" element={
+            <ProtectedRoute>
+              <SurveyEditPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/analytics/:id" element={
             <ProtectedRoute>
               <AnalyticsPage />
             </ProtectedRoute>

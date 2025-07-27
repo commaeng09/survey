@@ -13,6 +13,12 @@ from .serializers import (
     ResponseDetailSerializer
 )
 
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def health_check(request):
+    """헬스체크 엔드포인트 - 인증 불필요"""
+    return Response({'status': 'healthy', 'message': 'Survey API is running'})
+
 class SurveyViewSet(viewsets.ModelViewSet):
     """설문조사 CRUD API"""
     permission_classes = [IsAuthenticated]

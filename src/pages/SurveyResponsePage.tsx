@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { surveyAPI } from '../services/api';
 import type { Survey, Question } from '../types/survey';
 
 // 임시 설문지 데이터 (실제로는 API에서 가져올 데이터)
@@ -13,11 +14,14 @@ const MOCK_SURVEYS: Survey[] = [
       { id: 'q2', type: 'multiple-choice', title: '가장 도움이 된 과목은?', required: true, options: ['프로그래밍', '데이터베이스', '네트워크'] },
       { id: 'q3', type: 'long-text', title: '개선사항이 있다면 자유롭게 작성해주세요.', required: false }
     ],
-    createdAt: new Date('2025-01-20'),
-    updatedAt: new Date('2025-01-22'),
+    creator: 'admin',
+    isPublic: true,
+    createdAt: '2025-01-20T00:00:00Z',
+    updatedAt: '2025-01-22T00:00:00Z',
     status: 'published',
-    startDate: new Date('2025-01-22T09:00:00'),
-    endDate: new Date('2025-01-31T18:00:00')
+    responses: [],
+    startDate: '2025-01-22T09:00:00Z',
+    endDate: '2025-01-31T18:00:00Z'
   },
   {
     id: '2',
@@ -27,9 +31,12 @@ const MOCK_SURVEYS: Survey[] = [
       { id: 'q1', type: 'rating', title: '온라인 강의 화질은 어땠나요?', required: true },
       { id: 'q2', type: 'checkbox', title: '어떤 기능이 필요하다고 생각하시나요?', required: false, options: ['화면 공유', '채팅', '녹화 기능', '퀴즈'] }
     ],
-    createdAt: new Date('2025-01-15'),
-    updatedAt: new Date('2025-01-15'),
-    status: 'published'
+    creator: 'admin',
+    isPublic: true,
+    createdAt: '2025-01-15T00:00:00Z',
+    updatedAt: '2025-01-15T00:00:00Z',
+    status: 'published',
+    responses: []
   },
   {
     id: '3',
@@ -40,11 +47,14 @@ const MOCK_SURVEYS: Survey[] = [
       { id: 'q2', type: 'short-text', title: '희망하는 직무는?', required: true },
       { id: 'q3', type: 'dropdown', title: '관심 있는 회사 규모는?', required: false, options: ['스타트업', '중소기업', '대기업', '공공기관'] }
     ],
-    createdAt: new Date('2025-01-10'),
-    updatedAt: new Date('2025-01-18'),
+    creator: 'admin',
+    isPublic: true,
+    createdAt: '2025-01-10T00:00:00Z',
+    updatedAt: '2025-01-18T00:00:00Z',
     status: 'closed',
-    startDate: new Date('2025-01-10T09:00:00'),
-    endDate: new Date('2025-01-18T18:00:00')
+    responses: [],
+    startDate: '2025-01-10T09:00:00Z',
+    endDate: '2025-01-18T18:00:00Z'
   }
 ];
 
@@ -64,8 +74,23 @@ export default function SurveyResponsePage() {
 
   useEffect(() => {
     // 설문지 데이터 로드
-    const foundSurvey = MOCK_SURVEYS.find(s => s.id === id);
-    setSurvey(foundSurvey || null);
+    const loadSurvey = async () => {
+      try {
+        // 먼저 백엔드에서 공개 설문 가져오기 시도
+        const backendSurvey = await surveyAPI.getPublicSurvey(id!);
+        setSurvey(backendSurvey);
+      } catch (error) {
+        console.log('백엔드에서 설문 로드 실패, 로컬 데이터 사용:', error);
+        
+        // 백엔드 실패 시 목 데이터에서 찾기
+        const foundSurvey = MOCK_SURVEYS.find(s => s.id === id);
+        setSurvey(foundSurvey || null);
+      }
+    };
+
+    if (id) {
+      loadSurvey();
+    }
   }, [id]);
 
   if (!survey) {
@@ -120,7 +145,8 @@ export default function SurveyResponsePage() {
   const now = new Date();
   
   // 시작일이 설정되어 있고 아직 시작되지 않은 경우
-  if (survey.startDate && now < survey.startDate) {
+  if (survey.startDate && now < new Date(survey.startDate)) {
+    const startDate = new Date(survey.startDate);
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -131,7 +157,7 @@ export default function SurveyResponsePage() {
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">설문이 아직 시작되지 않았습니다</h2>
           <p className="text-gray-600 mb-2">
-            설문 시작일: {survey.startDate.toLocaleDateString('ko-KR')} {survey.startDate.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+            설문 시작일: {startDate.toLocaleDateString('ko-KR')} {startDate.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
           </p>
           <p className="text-gray-500">설정된 시간이 되면 설문에 참여할 수 있습니다.</p>
         </div>
@@ -140,7 +166,8 @@ export default function SurveyResponsePage() {
   }
 
   // 종료일이 설정되어 있고 이미 종료된 경우
-  if (survey.endDate && now > survey.endDate) {
+  if (survey.endDate && now > new Date(survey.endDate)) {
+    const endDate = new Date(survey.endDate);
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -151,7 +178,7 @@ export default function SurveyResponsePage() {
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">설문 응답 기간이 종료되었습니다</h2>
           <p className="text-gray-600 mb-2">
-            설문 종료일: {survey.endDate.toLocaleDateString('ko-KR')} {survey.endDate.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+            설문 종료일: {endDate.toLocaleDateString('ko-KR')} {endDate.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
           </p>
           <p className="text-gray-500">설문 응답 기간이 만료되어 더 이상 참여할 수 없습니다.</p>
         </div>
@@ -263,13 +290,41 @@ export default function SurveyResponsePage() {
     setIsSubmitting(true);
     
     try {
-      // 실제로는 API 호출
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      console.log('응답 제출:', responses);
+      // 백엔드 API로 응답 제출 시도
+      const responseData = {
+        respondent_name: 'Anonymous',
+        responses: Object.entries(responses).map(([questionId, answer]) => ({
+          question_id: questionId,
+          answer: typeof answer === 'object' ? JSON.stringify(answer) : String(answer)
+        }))
+      };
+
+      await surveyAPI.submitResponse(survey.id, responseData);
+      console.log('응답이 백엔드로 제출되었습니다:', responseData);
       setIsCompleted(true);
     } catch (error) {
-      console.error('제출 오류:', error);
-      alert('응답 제출 중 오류가 발생했습니다. 다시 시도해주세요.');
+      console.error('백엔드 제출 실패, 로컬 저장 시도:', error);
+      
+      // 백엔드 실패 시 로컬 스토리지에 저장
+      try {
+        const responseData = {
+          id: `response-${Date.now()}`,
+          surveyId: survey.id,
+          respondentName: 'Anonymous',
+          responses: responses,
+          submittedAt: new Date().toISOString()
+        };
+
+        const existingResponses = JSON.parse(localStorage.getItem('survey_responses') || '[]');
+        existingResponses.push(responseData);
+        localStorage.setItem('survey_responses', JSON.stringify(existingResponses));
+
+        console.log('응답이 로컬에 저장되었습니다:', responseData);
+        setIsCompleted(true);
+      } catch (localError) {
+        console.error('로컬 저장도 실패:', localError);
+        alert('응답 제출 중 오류가 발생했습니다. 다시 시도해주세요.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -459,12 +514,12 @@ export default function SurveyResponsePage() {
                 <div className="text-sm text-gray-600 space-y-1">
                   {survey.startDate && (
                     <p>
-                      <span className="font-medium">시작:</span> {survey.startDate.toLocaleDateString('ko-KR')} {survey.startDate.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+                      <span className="font-medium">시작:</span> {new Date(survey.startDate).toLocaleDateString('ko-KR')} {new Date(survey.startDate).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
                     </p>
                   )}
                   {survey.endDate && (
                     <p>
-                      <span className="font-medium">종료:</span> {survey.endDate.toLocaleDateString('ko-KR')} {survey.endDate.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+                      <span className="font-medium">종료:</span> {new Date(survey.endDate).toLocaleDateString('ko-KR')} {new Date(survey.endDate).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
                     </p>
                   )}
                 </div>

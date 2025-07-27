@@ -6,6 +6,7 @@ router = DefaultRouter()
 router.register('surveys', views.SurveyViewSet, basename='survey')
 
 urlpatterns = [
+    path('health/', views.health_check, name='health-check'),
     path('', include(router.urls)),
     path('public/<uuid:survey_id>/', views.survey_public_view, name='survey-public'),
     path('public/<uuid:survey_id>/submit/', views.submit_response, name='submit-response'),

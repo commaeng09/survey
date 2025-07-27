@@ -2,15 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContextNew';
 import { surveyAPI } from '../services/api';
-
-interface Survey {
-  id: string;
-  title: string;
-  description: string;
-  status: 'draft' | 'active' | 'closed';
-  createdAt: string;
-  responses: number;
-}
+import type { Survey } from '../types/survey';
 
 export default function DashboardPage() {
   const { user, logout } = useAuth();
@@ -25,25 +17,37 @@ export default function DashboardPage() {
       id: '1',
       title: '고객 만족도 조사',
       description: '서비스 개선을 위한 고객 만족도 설문조사입니다.',
-      status: 'active',
-      createdAt: '2025-01-15',
-      responses: 45
+      status: 'published',
+      createdAt: '2025-01-15T00:00:00Z',
+      updatedAt: '2025-01-15T00:00:00Z',
+      creator: 'admin',
+      isPublic: true,
+      questions: [],
+      responses: []
     },
     {
       id: '2',
       title: '제품 피드백 수집',
       description: '새로운 제품에 대한 사용자 피드백을 수집합니다.',
       status: 'draft',
-      createdAt: '2025-01-10',
-      responses: 0
+      createdAt: '2025-01-10T00:00:00Z',
+      updatedAt: '2025-01-10T00:00:00Z',
+      creator: 'admin',
+      isPublic: false,
+      questions: [],
+      responses: []
     },
     {
       id: '3',
       title: '교육 과정 평가',
       description: '온라인 교육 과정에 대한 평가 설문입니다.',
       status: 'closed',
-      createdAt: '2025-01-05',
-      responses: 128
+      createdAt: '2025-01-05T00:00:00Z',
+      updatedAt: '2025-01-05T00:00:00Z',
+      creator: 'admin',
+      isPublic: true,
+      questions: [],
+      responses: []
     }
   ];
 
@@ -53,8 +57,12 @@ export default function DashboardPage() {
     title: '환영합니다! 첫 번째 설문 샘플',
     description: '설문지 관리 시스템을 체험해보세요. 이것은 샘플 설문입니다.',
     status: 'draft',
-    createdAt: new Date().toISOString().split('T')[0],
-    responses: 0
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    creator: user?.username || '',
+    isPublic: false,
+    questions: [],
+    responses: []
   };
 
   useEffect(() => {
@@ -116,40 +124,115 @@ export default function DashboardPage() {
   };
 
   const handleEditSurvey = (surveyId: string) => {
-    alert(`설문 ${surveyId} 편집 기능 (개발 예정)`);
+    navigate(`/survey/edit/${surveyId}`);
   };
 
   const handleViewAnalytics = (surveyId: string) => {
-    alert(`설문 ${surveyId} 분석 보기 (개발 예정)`);
+    navigate(`/analytics/${surveyId}`);
   };
 
   const handleShareSurvey = (surveyId: string) => {
-    alert(`설문 ${surveyId} 공유 기능 (개발 예정)`);
+    copyShareLink(surveyId);
   };
 
   const handleDeleteSurvey = async (surveyId: string) => {
-    if (confirm('정말로 이 설문을 삭제하시겠습니까?')) {
-      try {
-        // 백엔드 API로 삭제 시도
-        await surveyAPI.deleteSurvey(surveyId);
-        setSurveys(prev => prev.filter(s => s.id !== surveyId));
-        alert('설문이 삭제되었습니다.');
-      } catch (error) {
-        console.log('백엔드 삭제 실패, 로컬에서 삭제:', error);
-        
-        // 백엔드 실패 시 로컬 스토리지에서 삭제
-        const userSurveys = JSON.parse(localStorage.getItem('user_surveys') || '[]');
-        const updatedSurveys = userSurveys.filter((s: any) => s.id !== surveyId);
-        localStorage.setItem('user_surveys', JSON.stringify(updatedSurveys));
-        
-        setSurveys(prev => prev.filter(s => s.id !== surveyId));
-        alert('설문이 삭제되었습니다. (로컬)');
-      }
-    }
+    await deleteSurvey(surveyId);
   };
 
   const handleImportSurvey = () => {
-    alert('설문 가져오기 기능 (개발 예정)');
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          try {
+            const surveyData = JSON.parse(event.target?.result as string);
+            const newSurvey: Survey = {
+              ...surveyData,
+              id: `survey-${Date.now()}`,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              creator: user?.username || '',
+              responses: []
+            };
+            
+            const existingSurveys = JSON.parse(localStorage.getItem(`${user?.username}_surveys`) || '[]');
+            existingSurveys.push(newSurvey);
+            localStorage.setItem(`${user?.username}_surveys`, JSON.stringify(existingSurveys));
+            
+            setSurveys(existingSurveys);
+            alert('설문을 성공적으로 가져왔습니다!');
+          } catch (error) {
+            alert('설문 파일을 읽을 수 없습니다. JSON 형식인지 확인해주세요.');
+          }
+        };
+        reader.readAsText(file);
+      }
+    };
+    input.click();
+  };
+
+  const handleExportSurvey = (survey: Survey) => {
+    const exportData = {
+      title: survey.title,
+      description: survey.description,
+      questions: survey.questions || [],
+      isPublic: survey.status === 'published',
+      status: 'draft'
+    };
+
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${survey.title.replace(/[^a-z0-9]/gi, '_')}_survey.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    alert('설문이 JSON 파일로 내보내기되었습니다!');
+  };
+
+  const copyShareLink = (surveyId: string) => {
+    const shareUrl = `${window.location.origin}/survey/${surveyId}`;
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      alert('설문 링크가 클립보드에 복사되었습니다!');
+    }).catch(() => {
+      // 클립보드 API가 지원되지 않는 경우 대체 방법
+      const textArea = document.createElement('textarea');
+      textArea.value = shareUrl;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      alert('설문 링크가 클립보드에 복사되었습니다!');
+    });
+  };
+
+  const deleteSurvey = async (surveyId: string) => {
+    if (!confirm('정말로 이 설문을 삭제하시겠습니까?')) {
+      return;
+    }
+
+    try {
+      await surveyAPI.deleteSurvey(surveyId);
+      setSurveys(prev => prev.filter(s => s.id !== surveyId));
+      alert('설문이 삭제되었습니다.');
+    } catch (error) {
+      console.error('설문 삭제 실패:', error);
+      // 백엔드 연결 실패 시 로컬에서 삭제
+      const userSurveys = JSON.parse(localStorage.getItem('user_surveys') || '[]');
+      const updatedSurveys = userSurveys.filter((s: any) => s.id !== surveyId);
+      localStorage.setItem('user_surveys', JSON.stringify(updatedSurveys));
+      setSurveys(prev => prev.filter(s => s.id !== surveyId));
+      alert('설문이 삭제되었습니다.');
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -239,7 +322,7 @@ export default function DashboardPage() {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">진행중</p>
                 <p className="text-2xl font-semibold text-gray-900">
-                  {surveys.filter(s => s.status === 'active').length}
+                  {surveys.filter(s => s.status === 'published').length}
                 </p>
               </div>
             </div>
@@ -271,7 +354,7 @@ export default function DashboardPage() {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">총 응답</p>
                 <p className="text-2xl font-semibold text-gray-900">
-                  {surveys.reduce((sum, s) => sum + s.responses, 0)}
+                  {surveys.reduce((sum, s) => sum + s.responses.length, 0)}
                 </p>
               </div>
             </div>
@@ -325,7 +408,7 @@ export default function DashboardPage() {
                     <div className="mt-2 flex items-center text-sm text-gray-500">
                       <span>생성일: {survey.createdAt}</span>
                       <span className="mx-2">•</span>
-                      <span>응답 수: {survey.responses}개</span>
+                      <span>응답 수: {survey.responses.length}개</span>
                     </div>
                   </div>
                   
@@ -355,6 +438,15 @@ export default function DashboardPage() {
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
+                      </svg>
+                    </button>
+                    <button 
+                      onClick={() => handleExportSurvey(survey)}
+                      className="text-gray-400 hover:text-gray-600 p-1 rounded-md transition-colors"
+                      title="내보내기"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
                       </svg>
                     </button>
                     <button 
