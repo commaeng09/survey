@@ -217,7 +217,6 @@ CORS_ALLOWED_ORIGINS = [
 
 # Render specific CORS
 CORS_URLS_REGEX = r'^.*$'  # Apply to ALL URLs
-CORS_REPLACE_HTTPS_REFERER = True
 
 # Production settings
 if not DEBUG:

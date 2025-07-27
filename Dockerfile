@@ -4,17 +4,25 @@ FROM python:3.11-slim
 # 환경변수 설정
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
+ENV DEBIAN_FRONTEND=noninteractive
 
 # 작업 디렉토리 설정
 WORKDIR /app
 
-# 시스템 의존성 설치
+# 시스템 의존성 설치 (PostgreSQL 지원 포함)
 RUN apt-get update && apt-get install -y \
     postgresql-client \
+    postgresql-server-dev-all \
     gcc \
+    g++ \
     python3-dev \
     libpq-dev \
+    pkg-config \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
+
+# pip 업그레이드
+RUN pip install --upgrade pip
 
 # requirements 복사 및 설치
 COPY backend/requirements.txt .

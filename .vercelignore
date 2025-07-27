@@ -1,0 +1,33 @@
+# Vercel에서 Django 백엔드 파일들 무시
+backend/
+Dockerfile
+render.yaml
+requirements.txt
+*.py
+*.sh
+gunicorn.conf.py
+migrate_render.py
+manual_migrate.sh
+
+# 기타 백엔드 관련 파일들
+*.sqlite3
+db.sqlite3
+.env
+.env.example
+.env.local
+.env.production
+
+# Python 관련
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+
+# Django 관련
+staticfiles/
+media/
+*.log
