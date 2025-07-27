@@ -187,7 +187,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 CORS_PREFLIGHT_MAX_AGE = 86400
 
-# Force specific origins as well for belt-and-suspenders approach
+# Explicitly whitelist our production domain
 CORS_ALLOWED_ORIGINS = [
     "https://survey-zeta-seven.vercel.app",
     "https://survey-amz9fv00u-commaeng09s-projects.vercel.app",
@@ -199,9 +199,12 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:5174",
 ]
 
-# Force allow all headers and methods
+# Ensure all headers and methods are allowed
 CORS_ALLOW_ALL_HEADERS = True
 CORS_ALLOW_ALL_METHODS = True
+
+# Add explicit CORS debugging settings
+CORS_URLS_REGEX = r'^/api/.*$'
 
 # Production settings
 if not DEBUG:
