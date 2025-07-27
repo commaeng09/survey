@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth, type SignupData } from '../contexts/AuthContextNew';
+import { surveyAPI } from '../services/api';
 
 export default function SignupPage() {
   const [formData, setFormData] = useState({
@@ -56,35 +57,15 @@ export default function SignupPage() {
     try {
       console.log('🔍 Checking username:', username);
       
-      // 직접 fetch로 테스트해보기
-      const directResponse = await fetch('https://survey-production-c653.up.railway.app/api/auth/check-username/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username }),
+      // surveyAPI.checkUsername 사용 (올바른 Render URL)
+      const response = await surveyAPI.checkUsername(username);
+      console.log('✅ API Response:', response);
+      
+      setUsernameStatus({
+        checking: false,
+        available: response.available,
+        message: response.message
       });
-      
-      console.log('📡 Direct fetch response status:', directResponse.status);
-      const directData = await directResponse.json();
-      console.log('📄 Direct fetch response data:', directData);
-      
-      // 백엔드 응답이 정상적이면 사용
-      if (directResponse.ok && directData.hasOwnProperty('available')) {
-        setUsernameStatus({
-          checking: false,
-          available: directData.available,
-          message: directData.message
-        });
-      } else {
-        // 백엔드 연결 실패 시 임시로 허용 (개발용)
-        console.warn('⚠️ Backend connection failed, allowing username temporarily');
-        setUsernameStatus({
-          checking: false,
-          available: true,
-          message: '사용 가능한 아이디입니다. (오프라인 모드)'
-        });
-      }
       
     } catch (error) {
       console.error('❌ Username check failed:', error);
