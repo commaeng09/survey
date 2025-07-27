@@ -75,16 +75,27 @@ export default function SurveyResponsePage() {
   useEffect(() => {
     // 설문지 데이터 로드
     const loadSurvey = async () => {
+      console.log('🔍 Loading survey with ID:', id);
+      
       try {
         // 먼저 백엔드에서 공개 설문 가져오기 시도
+        console.log('📡 Attempting to fetch from backend API...');
         const backendSurvey = await surveyAPI.getPublicSurvey(id!);
+        console.log('✅ Successfully loaded survey from backend:', backendSurvey);
         setSurvey(backendSurvey);
       } catch (error) {
-        console.log('백엔드에서 설문 로드 실패, 로컬 데이터 사용:', error);
+        console.error('❌ Backend API failed:', error);
+        console.log('🔄 Falling back to mock data...');
         
         // 백엔드 실패 시 목 데이터에서 찾기
         const foundSurvey = MOCK_SURVEYS.find(s => s.id === id);
-        setSurvey(foundSurvey || null);
+        if (foundSurvey) {
+          console.log('✅ Found survey in mock data:', foundSurvey);
+          setSurvey(foundSurvey);
+        } else {
+          console.error('❌ Survey not found in mock data either. Available IDs:', MOCK_SURVEYS.map(s => s.id));
+          setSurvey(null);
+        }
       }
     };
 

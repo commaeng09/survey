@@ -102,8 +102,25 @@ export const surveyAPI = {
     }),
   
   // 공개 설문조사 조회 (응답용)
-  getPublicSurvey: (id: string) =>
-    fetch(`${API_BASE_URL}/public/${id}/`).then(res => res.json()),
+  getPublicSurvey: (id: string) => {
+    console.log('📤 API: Fetching public survey with ID:', id);
+    return fetch(`${API_BASE_URL}/public/${id}/`)
+      .then(res => {
+        console.log('📡 Public survey response status:', res.status);
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
+        return res.json();
+      })
+      .then(data => {
+        console.log('✅ Public survey data received:', data);
+        return data;
+      })
+      .catch(error => {
+        console.error('❌ Public survey fetch failed:', error);
+        throw error;
+      });
+  },
   
   // 설문조사 응답 제출
   submitResponse: (id: string, responseData: any) =>
