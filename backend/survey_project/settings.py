@@ -135,9 +135,6 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Custom user model
-AUTH_USER_MODEL = 'authentication.User'
-
 # REST Framework configuration
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -223,9 +220,6 @@ CORS_ALLOWED_METHODS = [
     'POST',
     'PUT',
 ]
-
-# Additional CORS settings for troubleshooting
-CORS_ALLOW_HEADERS = CORS_ALLOWED_HEADERS  # Explicit setting
 
 # Production settings
 if not DEBUG:
