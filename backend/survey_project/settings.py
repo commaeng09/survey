@@ -182,45 +182,26 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
 }
 
-# CORS settings - Temporary allow all for debugging
-CORS_ALLOW_ALL_ORIGINS = True  # Temporary for debugging
+# CORS settings - Force allow all for immediate fix
+CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 CORS_PREFLIGHT_MAX_AGE = 86400
 
-# Explicitly set allowed origins as backup
+# Force specific origins as well for belt-and-suspenders approach
 CORS_ALLOWED_ORIGINS = [
+    "https://survey-zeta-seven.vercel.app",
+    "https://survey-amz9fv00u-commaeng09s-projects.vercel.app",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "http://localhost:5174",
     "http://127.0.0.1:5174",
-    "https://survey-zeta-seven.vercel.app",  # 실제 Vercel 도메인
-    "https://survey-amz9fv00u-commaeng09s-projects.vercel.app",  # 임시 Vercel 도메인
 ]
 
-# CORS Headers
-CORS_ALLOWED_HEADERS = [
-    'accept',
-    'accept-encoding',
-    'authorization',
-    'content-type',
-    'dnt',
-    'origin',
-    'user-agent',
-    'x-csrftoken',
-    'x-requested-with',
-]
-
-# CORS Methods
-CORS_ALLOWED_METHODS = [
-    'DELETE',
-    'GET',
-    'OPTIONS',
-    'PATCH',
-    'POST',
-    'PUT',
-]
+# Force allow all headers and methods
+CORS_ALLOW_ALL_HEADERS = True
+CORS_ALLOW_ALL_METHODS = True
 
 # Production settings
 if not DEBUG:
