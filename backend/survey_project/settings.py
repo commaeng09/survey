@@ -55,11 +55,11 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 AUTH_USER_MODEL = 'authentication.User'
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',  # CORS는 최상단에!
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
+    'django.middleware.common.CommonMiddleware',  # CORS 다음에 바로!
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -87,20 +87,32 @@ TEMPLATES = [
 WSGI_APPLICATION = 'survey_project.wsgi.application'
 
 # Database
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# Use DATABASE_URL for production (Railway/Render) - prioritize production DB
+if config('DATABASE_URL', default=None):
+    try:
+        import dj_database_url
+        DATABASES = {
+            'default': dj_database_url.parse(config('DATABASE_URL'))
+        }
+        print(f"✅ Using production database: {DATABASES['default']['ENGINE']}")
+    except ImportError as e:
+        print(f"❌ dj_database_url import failed: {e}")
+        # Fallback to SQLite
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': BASE_DIR / 'db.sqlite3',
+            }
+        }
+else:
+    # Development SQLite
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
-
-# Use DATABASE_URL for production (Railway/Render)
-try:
-    import dj_database_url
-    if config('DATABASE_URL', default=None):
-        DATABASES['default'] = dj_database_url.parse(config('DATABASE_URL'))
-except ImportError:
-    pass
+    print("📝 Using development SQLite database")
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -182,12 +194,14 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
 }
 
-# CORS settings - Force allow all for immediate fix
+# CORS settings - MAXIMUM PERMISSIVE FOR DEBUGGING
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_HEADERS = True
+CORS_ALLOW_ALL_METHODS = True
 CORS_PREFLIGHT_MAX_AGE = 86400
 
-# Explicitly whitelist our production domain
+# Backup whitelist
 CORS_ALLOWED_ORIGINS = [
     "https://survey-zeta-seven.vercel.app",
     "https://survey-amz9fv00u-commaeng09s-projects.vercel.app",
@@ -199,12 +213,9 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:5174",
 ]
 
-# Ensure all headers and methods are allowed
-CORS_ALLOW_ALL_HEADERS = True
-CORS_ALLOW_ALL_METHODS = True
-
-# Add explicit CORS debugging settings
-CORS_URLS_REGEX = r'^/api/.*$'
+# Debug CORS
+CORS_URLS_REGEX = r'^.*$'  # Apply to ALL URLs
+CORS_REPLACE_HTTPS_REFERER = True
 
 # Production settings
 if not DEBUG:
