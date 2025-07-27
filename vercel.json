@@ -1,36 +1,6 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "src/**",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
-    },
-    {
-      "src": "backend/survey_project/wsgi.py",
-      "use": "@vercel/python",
-      "config": {
-        "maxLambdaSize": "15mb"
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "backend/survey_project/wsgi.py"
-    },
-    {
-      "src": "/admin/(.*)",
-      "dest": "backend/survey_project/wsgi.py"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "src/$1"
-    }
-  ],
-  "env": {
-    "DJANGO_SETTINGS_MODULE": "survey_project.settings"
-  }
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "installCommand": "npm install",
+  "framework": "vite"
 }
