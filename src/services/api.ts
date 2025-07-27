@@ -1,7 +1,8 @@
 // API 기본 설정 - Render.com 새로운 백엔드 (2025-01-27 핵폭탄 버전)
-// 캐시 버스터: v2.0.0-render-force-update
+// 캐시 버스터: v2.0.0-render-force-update  
+// ⚡ VERCEL 캐시 무시하고 강제로 새 URL 사용
 const FORCE_NEW_API_URL = 'https://survey-backend-dgiy.onrender.com/api';
-const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_URL || FORCE_NEW_API_URL;
+const API_BASE_URL = FORCE_NEW_API_URL; // 완전 하드코딩으로 강제!
 
 console.log('🎯 FINAL API URL:', API_BASE_URL);
 console.log('🔥 Force URL:', FORCE_NEW_API_URL);
