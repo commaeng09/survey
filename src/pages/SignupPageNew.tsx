@@ -5,13 +5,12 @@ import { useAuth, type SignupData } from '../contexts/AuthContextNew';
 export default function SignupPage() {
   const [formData, setFormData] = useState({
     username: '',
-    email: '',
     password: '',
     password_confirm: '',
     name: '',
     first_name: '',
     last_name: '',
-    role: 'instructor' as const
+    organization: ''
   });
   const [error, setError] = useState('');
   const { signup, isLoading } = useAuth();
@@ -36,7 +35,7 @@ export default function SignupPage() {
       if (success) {
         navigate('/dashboard');
       } else {
-        setError('이미 존재하는 사용자명 또는 이메일입니다.');
+        setError('이미 존재하는 사용자명입니다.');
       }
     } catch (err) {
       setError('회원가입 중 오류가 발생했습니다.');
@@ -56,7 +55,7 @@ export default function SignupPage() {
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-                사용자명
+                아이디
               </label>
               <div className="mt-1">
                 <input
@@ -64,25 +63,9 @@ export default function SignupPage() {
                   name="username"
                   type="text"
                   required
+                  placeholder="영문, 숫자를 포함한 4-20자"
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   value={formData.username}
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                이메일
-              </label>
-              <div className="mt-1">
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  required
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  value={formData.email}
                   onChange={handleChange}
                 />
               </div>
@@ -176,20 +159,20 @@ export default function SignupPage() {
             </div>
 
             <div>
-              <label htmlFor="role" className="block text-sm font-medium text-gray-700">
-                역할
+              <label htmlFor="organization" className="block text-sm font-medium text-gray-700">
+                소속
               </label>
               <div className="mt-1">
-                <select
-                  id="role"
-                  name="role"
+                <input
+                  id="organization"
+                  name="organization"
+                  type="text"
+                  required
+                  placeholder="회사명, 학교명, 기관명 등"
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  value={formData.role}
+                  value={formData.organization}
                   onChange={handleChange}
-                >
-                  <option value="instructor">강사</option>
-                  <option value="admin">관리자</option>
-                </select>
+                />
               </div>
             </div>
 

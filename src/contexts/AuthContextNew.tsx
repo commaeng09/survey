@@ -3,22 +3,20 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 export interface User {
   id: string;
   username: string;
-  email: string;
   name: string;
   first_name: string;
   last_name: string;
-  role: 'instructor' | 'admin';
+  organization: string;
 }
 
 export interface SignupData {
   username: string;
-  email: string;
   password: string;
   password_confirm: string;
   name: string;
   first_name: string;
   last_name: string;
-  role: 'instructor' | 'admin';
+  organization: string;
 }
 
 interface AuthContextType {
@@ -36,22 +34,20 @@ const MOCK_USERS = [
   {
     id: '1',
     username: 'instructor',
-    email: 'instructor@example.com',
     password: 'password123',
     name: '김강사',
     first_name: '강사',
     last_name: '김',
-    role: 'instructor' as const
+    organization: '한국대학교'
   },
   {
     id: '2',
     username: 'admin',
-    email: 'admin@example.com',
     password: 'admin123',
     name: '관리자',
     first_name: '관리자',
     last_name: '시스템',
-    role: 'admin' as const
+    organization: '시스템관리팀'
   }
 ];
 
@@ -83,11 +79,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const user: User = {
         id: foundUser.id,
         username: foundUser.username,
-        email: foundUser.email,
         name: foundUser.name,
         first_name: foundUser.first_name,
         last_name: foundUser.last_name,
-        role: foundUser.role
+        organization: foundUser.organization
       };
       
       setUser(user);
@@ -105,7 +100,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    const existingUser = MOCK_USERS.find(u => u.username === data.username || u.email === data.email);
+    const existingUser = MOCK_USERS.find(u => u.username === data.username);
     if (existingUser) {
       setIsLoading(false);
       return false;
@@ -114,22 +109,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const newUser = {
       id: Date.now().toString(),
       username: data.username,
-      email: data.email,
       password: data.password,
       name: data.name,
       first_name: data.first_name,
       last_name: data.last_name,
-      role: data.role
+      organization: data.organization
     };
     
     const user: User = {
       id: newUser.id,
       username: newUser.username,
-      email: newUser.email,
       name: newUser.name,
       first_name: newUser.first_name,
       last_name: newUser.last_name,
-      role: newUser.role
+      organization: newUser.organization
     };
     
     MOCK_USERS.push(newUser);
@@ -176,12 +169,12 @@ export const TEST_ACCOUNTS = [
     username: 'instructor',
     password: 'password123',
     name: '김강사 (테스트)',
-    role: 'instructor'
+    organization: '한국대학교'
   },
   {
     username: 'admin',
     password: 'admin123', 
     name: '관리자 (테스트)',
-    role: 'admin'
+    organization: '시스템관리팀'
   }
 ];
