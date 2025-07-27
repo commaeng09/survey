@@ -10,9 +10,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-me-in-production')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', default=True, cast=bool)
+DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,healthcheck.railway.app,survey-production-c653.up.railway.app').split(',')
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,.onrender.com,survey-backend-dgiy.onrender.com').split(',')
 
 # Railway에서 자동으로 설정하는 환경변수들을 ALLOWED_HOSTS에 추가
 import os
@@ -55,11 +55,12 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 AUTH_USER_MODEL = 'authentication.User'
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
+    'survey_project.cors_middleware.CustomCorsMiddleware',  # 커스텀 CORS 미들웨어 추가
+    'corsheaders.middleware.CorsMiddleware',  # CORS는 최상단에!
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
+    'django.middleware.common.CommonMiddleware',  # CORS 다음에 바로!
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -87,20 +88,32 @@ TEMPLATES = [
 WSGI_APPLICATION = 'survey_project.wsgi.application'
 
 # Database
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# Use DATABASE_URL for production (Railway/Render) - prioritize production DB
+if config('DATABASE_URL', default=None):
+    try:
+        import dj_database_url
+        DATABASES = {
+            'default': dj_database_url.parse(config('DATABASE_URL'))
+        }
+        print(f"✅ Using production database: {DATABASES['default']['ENGINE']}")
+    except ImportError as e:
+        print(f"❌ dj_database_url import failed: {e}")
+        # Fallback to SQLite
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': BASE_DIR / 'db.sqlite3',
+            }
+        }
+else:
+    # Development SQLite
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
-
-# Use DATABASE_URL for production (Railway/Render)
-try:
-    import dj_database_url
-    if config('DATABASE_URL', default=None):
-        DATABASES['default'] = dj_database_url.parse(config('DATABASE_URL'))
-except ImportError:
-    pass
+    print("📝 Using development SQLite database")
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -134,9 +147,6 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-# Custom user model
-AUTH_USER_MODEL = 'authentication.User'
 
 # REST Framework configuration
 REST_FRAMEWORK = {
@@ -185,19 +195,28 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
 }
 
-# CORS settings
+# CORS settings - RENDER.COM OPTIMIZED
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_HEADERS = True
+CORS_ALLOW_ALL_METHODS = True
+CORS_PREFLIGHT_MAX_AGE = 86400
+
+# Backup whitelist for Render
 CORS_ALLOWED_ORIGINS = [
+    "https://survey-new-wheat.vercel.app",  # 새로운 Vercel 도메인
+    "https://survey-zeta-seven.vercel.app",
+    "https://survey-amz9fv00u-commaeng09s-projects.vercel.app",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "http://localhost:5174",
     "http://127.0.0.1:5174",
-    "https://survey-zeta-seven.vercel.app",  # 이전 Vercel 도메인
-    "https://survey-amz9fv00u-commaeng09s-projects.vercel.app",  # 현재 Vercel 도메인
 ]
 
-CORS_ALLOW_CREDENTIALS = True
+# Render specific CORS
+CORS_URLS_REGEX = r'^.*$'  # Apply to ALL URLs
 
 # Production settings
 if not DEBUG:
@@ -208,8 +227,22 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = 86400
     SECURE_REDIRECT_EXEMPT = []
     
-    # CORS settings for production
-    CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='').split(',')
+    # CORS settings for production - COMMENTED OUT TO USE CORS_ALLOW_ALL_ORIGINS
+    # CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='').split(',')
     
     # Static files settings
     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# CSRF settings for CORS - Render optimized
+CSRF_TRUSTED_ORIGINS = [
+    "https://survey-new-wheat.vercel.app",  # 새로운 Vercel 도메인
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5174",
+    "https://survey-zeta-seven.vercel.app",
+    "https://survey-amz9fv00u-commaeng09s-projects.vercel.app",
+    "https://*.onrender.com",
+]
