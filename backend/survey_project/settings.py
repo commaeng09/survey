@@ -199,6 +199,9 @@ CORS_ALLOWED_ORIGINS = [
 
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_ALL_ORIGINS = False
+CORS_PREFLIGHT_MAX_AGE = 86400
+
+# CORS Headers
 CORS_ALLOWED_HEADERS = [
     'accept',
     'accept-encoding',
@@ -210,6 +213,8 @@ CORS_ALLOWED_HEADERS = [
     'x-csrftoken',
     'x-requested-with',
 ]
+
+# CORS Methods
 CORS_ALLOWED_METHODS = [
     'DELETE',
     'GET',
@@ -218,6 +223,9 @@ CORS_ALLOWED_METHODS = [
     'POST',
     'PUT',
 ]
+
+# Additional CORS settings for troubleshooting
+CORS_ALLOW_HEADERS = CORS_ALLOWED_HEADERS  # Explicit setting
 
 # Production settings
 if not DEBUG:
