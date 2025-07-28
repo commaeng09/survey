@@ -107,7 +107,7 @@ export default function SurveyCreatePage() {
           options: q.options || []
         })),
         is_public: isPublic,
-        status: status === 'published' ? 'active' : 'draft'
+        status: status === 'published' ? 'published' : 'draft'
       };
 
       console.log('🚀 Sending survey data to backend:', surveyData);

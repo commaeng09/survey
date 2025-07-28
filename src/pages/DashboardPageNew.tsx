@@ -57,15 +57,15 @@ export default function DashboardPage() {
   const getTotalResponses = () => surveys.reduce((sum, s) => sum + (s.responses?.length || 0), 0);
 
   const handleCreateSurvey = () => {
-    navigate('/surveys/create');
+    navigate('/survey/create');
   };
 
   const handleEditSurvey = (surveyId: string) => {
-    navigate(`/surveys/edit/${surveyId}`);
+    navigate(`/survey/edit/${surveyId}`);
   };
 
   const handleViewAnalytics = (surveyId: string) => {
-    navigate(`/surveys/${surveyId}/analytics`);
+    navigate(`/analytics/${surveyId}`);
   };
 
   const handleShareSurvey = (surveyId: string) => {
@@ -177,7 +177,7 @@ export default function DashboardPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
+      case 'published': return 'bg-green-100 text-green-800';
       case 'draft': return 'bg-yellow-100 text-yellow-800';
       case 'closed': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
@@ -186,7 +186,7 @@ export default function DashboardPage() {
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'active': return '진행중';
+      case 'published': return '진행중';
       case 'draft': return '초안';
       case 'closed': return '종료';
       default: return '알 수 없음';
