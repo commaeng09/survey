@@ -1,6 +1,9 @@
 from rest_framework import serializers
 from .models import Survey, Question, Response, Answer
 from apps.authentication.serializers import UserSerializer
+import logging
+
+logger = logging.getLogger(__name__)
 
 class QuestionSerializer(serializers.ModelSerializer):
     class Meta:
@@ -25,10 +28,14 @@ class SurveyCreateSerializer(serializers.ModelSerializer):
         fields = ('title', 'description', 'status', 'scheduled_date', 'questions')
     
     def create(self, validated_data):
+        logger.info(f"SurveyCreateSerializer received data: {validated_data}")
         questions_data = validated_data.pop('questions', [])
+        logger.info(f"Questions data: {questions_data}")
         survey = Survey.objects.create(**validated_data)
+        logger.info(f"Created survey: {survey.id}")
         
-        for question_data in questions_data:
+        for i, question_data in enumerate(questions_data):
+            logger.info(f"Creating question {i+1}: {question_data}")
             Question.objects.create(survey=survey, **question_data)
         
         return survey

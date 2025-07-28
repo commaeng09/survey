@@ -4,6 +4,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.db.models import Count, Q
+import logging
 from .models import Survey, Question, Response as SurveyResponse
 from .serializers import (
     SurveySerializer, 
@@ -12,6 +13,8 @@ from .serializers import (
     ResponseSerializer,
     ResponseDetailSerializer
 )
+
+logger = logging.getLogger(__name__)
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -32,6 +35,7 @@ class SurveyViewSet(viewsets.ModelViewSet):
         return SurveySerializer
     
     def perform_create(self, serializer):
+        logger.info(f"Creating survey with data: {serializer.validated_data}")
         serializer.save(creator=self.request.user)
     
     @action(detail=True, methods=['post'])
