@@ -37,12 +37,40 @@ export default function AnalyticsPage() {
         
         setSurvey(surveyData);
 
-        // 분석 데이터 가져오기 (실제 API가 있다면)
+        // 백엔드에서 응답 데이터 가져오기
         try {
-          const analyticsData = await surveyAPI.getAnalytics(id);
-          setAnalytics(analyticsData);
+          console.log('🔍 Fetching responses from backend for survey:', id);
+          const backendResponses = await surveyAPI.getResponses(id);
+          console.log('📊 Backend responses:', backendResponses);
+          
+          if (backendResponses && backendResponses.length > 0) {
+            // 백엔드 응답 데이터를 로컬 형식으로 변환
+            const convertedResponses = backendResponses.map((resp: any) => ({
+              id: resp.id,
+              surveyId: id,
+              respondentName: resp.respondent_email || 'Anonymous',
+              responses: resp.answers.reduce((acc: any, answer: any) => {
+                acc[answer.question.id] = answer.text_answer || answer.choice_answers;
+                return acc;
+              }, {}),
+              submittedAt: resp.submitted_at
+            }));
+            
+            const processedAnalytics = processResponsesForAnalytics(surveyData, convertedResponses);
+            setAnalytics(processedAnalytics);
+          } else {
+            // 백엔드에 응답이 없으면 로컬 스토리지 확인
+            console.log('📱 No backend responses, checking local storage');
+            const localResponses = JSON.parse(localStorage.getItem(`survey_responses_${id}`) || '[]');
+            if (localResponses.length > 0) {
+              const processedAnalytics = processResponsesForAnalytics(surveyData, localResponses);
+              setAnalytics(processedAnalytics);
+            } else {
+              setAnalytics(null);
+            }
+          }
         } catch (analyticsError) {
-          console.log('Analytics API 호출 실패, 로컬 데이터 처리:', analyticsError);
+          console.log('❌ Analytics API 호출 실패, 로컬 데이터 처리:', analyticsError);
           // 로컬 저장소에서 응답 데이터 가져오기
           const responses = JSON.parse(localStorage.getItem(`survey_responses_${id}`) || '[]');
           if (responses.length > 0) {

@@ -244,12 +244,39 @@ export default function SurveyResponsePage() {
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">응답이 완료되었습니다!</h2>
           <p className="text-gray-600 mb-6">소중한 의견을 주셔서 감사합니다. 응답 내용은 교육 개선에 활용될 예정입니다.</p>
-          <button
-            onClick={() => window.close()}
-            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
-          >
-            창 닫기
-          </button>
+          <div className="space-y-3">
+            <button
+              onClick={() => {
+                // 브라우저 히스토리를 통해 이전 페이지로 이동
+                if (window.history.length > 1) {
+                  window.history.back();
+                } else {
+                  // 히스토리가 없으면 홈페이지로 이동
+                  window.location.href = '/';
+                }
+              }}
+              className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+            >
+              이전 페이지로 돌아가기
+            </button>
+            <button
+              onClick={() => {
+                try {
+                  window.close();
+                } catch (error) {
+                  // window.close() 실패 시 대체 동작
+                  if (window.history.length > 1) {
+                    window.history.back();
+                  } else {
+                    window.location.href = '/';
+                  }
+                }
+              }}
+              className="w-full px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white rounded-md transition-colors"
+            >
+              창 닫기
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -350,17 +377,41 @@ export default function SurveyResponsePage() {
       // 백엔드 API로 응답 제출 시도
       const responseData = {
         respondent_name: 'Anonymous',
-        responses: Object.entries(responses).map(([questionId, answer]) => ({
+        answers: Object.entries(responses).map(([questionId, answer]) => ({
           question_id: questionId,
           answer: typeof answer === 'object' ? JSON.stringify(answer) : String(answer)
         }))
       };
 
+      console.log('🚀 Submitting response to backend:', responseData);
       await surveyAPI.submitResponse(survey.id, responseData);
-      console.log('응답이 백엔드로 제출되었습니다:', responseData);
+      console.log('✅ 응답이 백엔드로 제출되었습니다:', responseData);
+      
+      // 백엔드 제출 성공 시에도 로컬에 저장 (Analytics 페이지에서 사용)
+      const localResponseData = {
+        id: `response-${Date.now()}`,
+        surveyId: survey.id,
+        respondentName: 'Anonymous',
+        responses: responses,
+        submittedAt: new Date().toISOString()
+      };
+
+      // 전체 응답 목록에 추가
+      const existingResponses = JSON.parse(localStorage.getItem('survey_responses') || '[]');
+      existingResponses.push(localResponseData);
+      localStorage.setItem('survey_responses', JSON.stringify(existingResponses));
+
+      // 특정 설문의 응답 목록에도 추가 (Analytics 페이지용)
+      const surveyResponses = JSON.parse(localStorage.getItem(`survey_responses_${survey.id}`) || '[]');
+      surveyResponses.push(localResponseData);
+      localStorage.setItem(`survey_responses_${survey.id}`, JSON.stringify(surveyResponses));
+
+      console.log('✅ 응답이 로컬에도 저장되었습니다:', localResponseData);
+      console.log('📊 설문별 응답 수:', surveyResponses.length);
+      
       setIsCompleted(true);
     } catch (error) {
-      console.error('백엔드 제출 실패, 로컬 저장 시도:', error);
+      console.error('❌ 백엔드 제출 실패, 로컬 저장 시도:', error);
       
       // 백엔드 실패 시 로컬 스토리지에 저장
       try {
@@ -372,11 +423,18 @@ export default function SurveyResponsePage() {
           submittedAt: new Date().toISOString()
         };
 
+        // 전체 응답 목록에 추가
         const existingResponses = JSON.parse(localStorage.getItem('survey_responses') || '[]');
         existingResponses.push(responseData);
         localStorage.setItem('survey_responses', JSON.stringify(existingResponses));
 
-        console.log('응답이 로컬에 저장되었습니다:', responseData);
+        // 특정 설문의 응답 목록에도 추가 (Analytics 페이지용)
+        const surveyResponses = JSON.parse(localStorage.getItem(`survey_responses_${survey.id}`) || '[]');
+        surveyResponses.push(responseData);
+        localStorage.setItem(`survey_responses_${survey.id}`, JSON.stringify(surveyResponses));
+
+        console.log('💾 응답이 로컬에 저장되었습니다:', responseData);
+        console.log('📊 설문별 응답 수:', surveyResponses.length);
         setIsCompleted(true);
       } catch (localError) {
         console.error('로컬 저장도 실패:', localError);
