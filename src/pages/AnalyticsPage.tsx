@@ -87,58 +87,101 @@ export default function AnalyticsPage() {
             console.log('🔍 Raw backend response structure:', JSON.stringify(backendResponses[0], null, 2));
             
             // 백엔드 응답 데이터를 로컬 형식으로 변환
-            const convertedResponses = backendResponses.map((resp: any) => {
-              console.log('🔄 Converting response:', resp);
+            const convertedResponses = backendResponses.map((resp: any, index: number) => {
+              console.log(`🔄 Converting response ${index + 1}:`, resp);
               
-              // answers 구조 확인
-              const responses: any = {};
-              if (resp.answers && Array.isArray(resp.answers)) {
-                resp.answers.forEach((answer: any) => {
-                  console.log('📝 Processing answer:', answer);
+              try {
+                // answers 구조 확인
+                const responses: any = {};
+                
+                // resp.answers가 존재하고 배열인지 확인
+                if (resp.answers && Array.isArray(resp.answers)) {
+                  console.log(`📝 Processing ${resp.answers.length} answers for response ${index + 1}`);
                   
-                  // 다양한 구조 지원
-                  let questionId = null;
-                  let answerValue = null;
-                  
-                  if (answer.question && answer.question.id) {
-                    questionId = answer.question.id;
-                  } else if (answer.question_id) {
-                    questionId = answer.question_id;
-                  } else if (answer.questionId) {
-                    questionId = answer.questionId;
-                  }
-                  
-                  if (answer.text_answer !== undefined) {
-                    answerValue = answer.text_answer;
-                  } else if (answer.choice_answers !== undefined) {
-                    answerValue = answer.choice_answers;
-                  } else if (answer.answer !== undefined) {
-                    answerValue = answer.answer;
-                  } else if (answer.value !== undefined) {
-                    answerValue = answer.value;
-                  }
-                  
-                  if (questionId && answerValue !== null) {
-                    responses[questionId] = answerValue;
-                    console.log(`✅ Mapped question ${questionId} -> ${answerValue}`);
-                  } else {
-                    console.warn('❌ Failed to extract question ID or answer value:', answer);
-                  }
-                });
+                  resp.answers.forEach((answer: any, answerIndex: number) => {
+                    console.log(`� Processing answer ${answerIndex + 1}:`, answer);
+                    
+                    try {
+                      // 다양한 구조 지원
+                      let questionId = null;
+                      let answerValue = null;
+                      
+                      // Question ID 추출
+                      if (answer.question && typeof answer.question === 'object' && answer.question.id) {
+                        questionId = answer.question.id;
+                      } else if (answer.question_id) {
+                        questionId = answer.question_id;
+                      } else if (answer.questionId) {
+                        questionId = answer.questionId;
+                      } else if (typeof answer.question === 'string') {
+                        questionId = answer.question;
+                      }
+                      
+                      // Answer Value 추출
+                      if (answer.text_answer !== undefined && answer.text_answer !== null) {
+                        answerValue = answer.text_answer;
+                      } else if (answer.choice_answers !== undefined && answer.choice_answers !== null) {
+                        answerValue = answer.choice_answers;
+                      } else if (answer.answer !== undefined && answer.answer !== null) {
+                        answerValue = answer.answer;
+                      } else if (answer.value !== undefined && answer.value !== null) {
+                        answerValue = answer.value;
+                      }
+                      
+                      console.log(`🔍 Extracted - questionId: ${questionId}, answerValue:`, answerValue);
+                      
+                      if (questionId && answerValue !== null && answerValue !== undefined) {
+                        responses[questionId] = answerValue;
+                        console.log(`✅ Mapped question ${questionId} -> ${JSON.stringify(answerValue)}`);
+                      } else {
+                        console.warn(`❌ Failed to extract question ID or answer value:`, {
+                          questionId,
+                          answerValue,
+                          originalAnswer: answer
+                        });
+                      }
+                    } catch (answerError) {
+                      console.error(`❌ Error processing answer ${answerIndex + 1}:`, answerError, answer);
+                    }
+                  });
+                } else {
+                  console.warn(`⚠️ No valid answers array found in response ${index + 1}:`, resp);
+                }
+                
+                const convertedResponse = {
+                  id: resp.id || `response_${index + 1}`,
+                  surveyId: id,
+                  respondentName: resp.respondent_email || resp.respondent_name || `Anonymous_${index + 1}`,
+                  responses: responses,
+                  submittedAt: resp.submitted_at || resp.created_at || new Date().toISOString()
+                };
+                
+                console.log(`✅ Converted response ${index + 1}:`, convertedResponse);
+                return convertedResponse;
+                
+              } catch (responseError) {
+                console.error(`❌ Error converting response ${index + 1}:`, responseError, resp);
+                return {
+                  id: `error_response_${index + 1}`,
+                  surveyId: id,
+                  respondentName: `Error_${index + 1}`,
+                  responses: {},
+                  submittedAt: new Date().toISOString()
+                };
               }
-              
-              return {
-                id: resp.id,
-                surveyId: id,
-                respondentName: resp.respondent_email || resp.respondent_name || 'Anonymous',
-                responses: responses,
-                submittedAt: resp.submitted_at || resp.created_at
-              };
             });
             
             console.log('📝 Converted responses:', convertedResponses);
+            console.log('📊 Total converted responses:', convertedResponses.length);
+            console.log('📋 Response data summary:', convertedResponses.map((r: any) => ({
+              id: r.id,
+              responseKeys: Object.keys(r.responses),
+              responseCount: Object.keys(r.responses).length
+            })));
+            
             setRawResponses(convertedResponses);
             const processedAnalytics = processResponsesForAnalytics(surveyData, convertedResponses);
+            console.log('📈 Final processed analytics:', processedAnalytics);
             setAnalytics(processedAnalytics);
           } else {
             // 백엔드에 응답이 없으면 로컬 스토리지 확인
