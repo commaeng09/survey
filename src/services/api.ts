@@ -1,9 +1,12 @@
 import type { Survey } from '../types/survey';
 
 // API 기본 설정
-const API_BASE_URL = 'https://survey-backend-dgiy.onrender.com/api';
+const API_BASE_URL = import.meta.env.DEV
+  ? 'http://localhost:8000/api'
+  : 'https://survey-backend-dgiy.onrender.com/api';
 
-console.log('🚀 PRODUCTION MODE: Using', API_BASE_URL);
+console.log('🚀 API Mode:', import.meta.env.DEV ? 'DEVELOPMENT' : 'PRODUCTION');
+console.log('🚀 Using API:', API_BASE_URL);
 
 // API 요청 헬퍼 함수
 const apiRequest = async (endpoint: string, options: RequestInit = {}) => {

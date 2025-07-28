@@ -1,11 +1,10 @@
 {
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
-    "builder": "DOCKERFILE",
-    "dockerfilePath": "Dockerfile"
+    "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "python manage.py migrate && gunicorn survey_project.wsgi:application -c gunicorn.conf.py",
+    "startCommand": "python manage.py migrate && gunicorn survey_project.wsgi:application --bind 0.0.0.0:$PORT",
     "healthcheckPath": "/admin/login/",
     "healthcheckTimeout": 300,
     "restartPolicyType": "ON_FAILURE",

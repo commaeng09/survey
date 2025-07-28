@@ -27,13 +27,13 @@ export default function DashboardPage() {
           id: s.id,
           title: s.title,
           description: s.description || '',
-          status: s.status === 'published' ? 'published' : (s.status || 'draft'),
+          status: s.status === 'active' ? 'published' : s.status || 'draft',
           createdAt: s.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
           updatedAt: s.updated_at?.split('T')[0] || new Date().toISOString().split('T')[0],
           responses: Array.isArray(s.responses) ? s.responses : [],
           questions: s.questions || [],
           creator: s.creator || user?.username,
-          isPublic: s.status === 'published'
+          isPublic: s.status === 'active'
         }));
         
         console.log('✅ Mapped surveys:', mappedSurveys);
