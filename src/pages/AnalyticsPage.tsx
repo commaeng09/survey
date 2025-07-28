@@ -64,6 +64,8 @@ export default function AnalyticsPage() {
   }, [id]);
 
   const processResponsesForAnalytics = (survey: Survey, responses: any[]) => {
+    console.log('Processing analytics for survey:', survey.title, 'responses:', responses.length);
+    
     const analytics: any = {
       totalResponses: responses.length,
       completionRate: 100, // 완료된 응답만 저장되므로 100%
@@ -73,6 +75,7 @@ export default function AnalyticsPage() {
 
     // survey.questions가 배열인지 확인하고 안전하게 처리
     const questions = Array.isArray(survey.questions) ? survey.questions : [];
+    console.log('Processing questions:', questions.length);
     
     questions.forEach((question, index) => {
       // question과 question.id가 존재하는지 확인
@@ -81,9 +84,13 @@ export default function AnalyticsPage() {
         return;
       }
 
+      console.log(`Processing question ${index + 1}: ${question.title} (ID: ${question.id})`);
+
       const questionResponses = responses
         .map(r => r.answers && r.answers[question.id])
         .filter(answer => answer !== undefined && answer !== null);
+      
+      console.log(`Found ${questionResponses.length} responses for question ${question.id}`);
       
       switch (question.type) {
         case 'rating': {
@@ -264,7 +271,7 @@ export default function AnalyticsPage() {
                     style={{ width: `${(count / maxCheckbox) * 100}%` }}
                   >
                     <span className="text-white text-xs font-medium">
-                      {count} ({Math.round((count / analytics.totalResponses) * 100)}%)
+                      {count} ({Math.round((count / (analytics?.totalResponses || 1)) * 100)}%)
                     </span>
                   </div>
                 </div>
@@ -377,7 +384,7 @@ export default function AnalyticsPage() {
                       총 응답수
                     </dt>
                     <dd className="text-lg font-medium text-gray-900">
-                      {analytics.totalResponses}개
+                      {analytics?.totalResponses || 0}개
                     </dd>
                   </dl>
                 </div>
@@ -401,7 +408,7 @@ export default function AnalyticsPage() {
                       완료율
                     </dt>
                     <dd className="text-lg font-medium text-gray-900">
-                      {analytics.completionRate}%
+                      {analytics?.completionRate || 0}%
                     </dd>
                   </dl>
                 </div>
@@ -425,7 +432,7 @@ export default function AnalyticsPage() {
                       평균 소요시간
                     </dt>
                     <dd className="text-lg font-medium text-gray-900">
-                      {analytics.averageTime}분
+                      {analytics?.averageTime || 0}분
                     </dd>
                   </dl>
                 </div>
@@ -437,7 +444,10 @@ export default function AnalyticsPage() {
         {/* 질문별 분석 */}
         <div className="space-y-6">
           {survey.questions.map((question, index) => {
-            const questionData = (analytics.responses as any)[question.id];
+            // analytics와 analytics.responses가 존재하는지 안전하게 확인
+            const questionData = analytics?.responses && typeof analytics.responses === 'object' 
+              ? (analytics.responses as any)[question.id] 
+              : null;
             
             return (
               <div key={question.id} className="bg-white shadow rounded-lg">
