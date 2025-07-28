@@ -68,8 +68,19 @@ export const authAPI = {
 // 설문조사 API
 export const surveyAPI = {
   // 내 설문조사 목록
-  getMySurveys: () => apiRequest('/surveys/'),
-  
+  getMySurveys: async (): Promise<Survey[]> => {
+    const response = await api.get('/surveys/');
+    // 백엔드 응답 구조를 정규화하여 항상 배열을 반환
+    if (Array.isArray(response.data)) {
+      return response.data;
+    }
+    if (response.data && Array.isArray(response.data.results)) {
+      return response.data.results;
+    }
+    console.warn('Unexpected API response structure for getMySurveys:', response.data);
+    return []; // 어떤 경우에도 빈 배열을 반환하여 타입 오류 방지
+  },
+
   // 단일 설문조사 조회
   getSurvey: (id: string) => apiRequest(`/surveys/${id}/`),
   
@@ -102,7 +113,7 @@ export const surveyAPI = {
     }),
   
   // 공개 설문조사 조회 (응답용)
-  getPublicSurvey: (id: string) => {
+  getPublicSurvey: async (id: string): Promise<Survey> => {
     console.log('📤 API: Fetching public survey with ID:', id);
     return fetch(`${API_BASE_URL}/public/${id}/`)
       .then(res => {

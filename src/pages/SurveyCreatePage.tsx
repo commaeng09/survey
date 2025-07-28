@@ -111,11 +111,12 @@ export default function SurveyCreatePage() {
       };
 
       console.log('🚀 Sending survey data to backend:', surveyData);
-      const result = await surveyAPI.createSurvey(surveyData);
-      console.log('✅ Survey created successfully:', result);
+      const response = await surveyAPI.createSurvey(surveyData);
+      console.log('✅ Survey published successfully:', response);
+
+      alert('✅ 설문조사가 성공적으로 발행되었습니다!');
+      navigate('/dashboard'); // 성공 후 반드시 이동
       
-      alert(status === 'draft' ? '설문이 임시저장되었습니다.' : '설문이 발행되었습니다.');
-      navigate('/dashboard');
     } catch (error) {
       console.error('💥 설문 저장 실패:', error);
       

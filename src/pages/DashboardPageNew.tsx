@@ -10,53 +10,60 @@ export default function DashboardPage() {
   
   // 사용자별 설문 데이터 관리
   const [surveys, setSurveys] = useState<Survey[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const loadSurveys = async () => {
+      if (!user) return;
+      
       try {
-        // 먼저 백엔드에서 설문 목록을 가져오려고 시도
+        setIsLoading(true);
+        // API 서비스에서 이미 응답을 정규화하므로, 복잡한 체크 로직이 필요 없음
         const backendSurveys = await surveyAPI.getMySurveys();
         
-        // 백엔드 데이터를 대시보드 형식으로 변환
         const mappedSurveys = backendSurveys.map((s: any) => ({
           id: s.id,
           title: s.title,
-          description: s.description,
-          status: s.status === 'published' ? 'active' : s.status,
+          description: s.description || '',
+          status: s.status === 'published' ? 'active' : (s.status || 'draft'),
           createdAt: s.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
-          responses: s.responses?.length || 0
+          responses: Array.isArray(s.responses) ? s.responses : [],
+          questions: s.questions || []
         }));
         
         setSurveys(mappedSurveys);
+        
       } catch (error) {
-        console.log('백엔드 연결 실패, 로컬 데이터 사용:', error);
-        
-        // 백엔드 연결 실패 시 로컬 스토리지 사용
-        const userSurveys = JSON.parse(localStorage.getItem('user_surveys') || '[]');
-        const currentUserSurveys = userSurveys.filter((s: any) => s.creator === user?.username);
-        
-        if (currentUserSurveys.length === 0) {
-          // 새 사용자이고 생성된 설문이 없으면 빈 배열을 보여줌
-          setSurveys([]);
-        } else {
-          // 사용자가 생성한 설문이 있으면 그것을 보여줌
-          const mappedSurveys = currentUserSurveys.map((s: any) => ({
-            id: s.id,
-            title: s.title,
-            description: s.description,
-            status: s.status === 'published' ? 'active' : s.status,
-            createdAt: s.createdAt.split('T')[0],
-            responses: s.responses?.length || 0
-          }));
-          setSurveys(mappedSurveys);
-        }
+        console.error('❌ 대시보드 설문 로드 실패:', error);
+        // 백엔드 연결 실패 시에도 안전하게 빈 배열로 설정
+        setSurveys([]);
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    if (user) {
-      loadSurveys();
-    }
+    loadSurveys();
   }, [user]);
+
+  // 안전한 통계 계산 함수들 (이제 surveys는 항상 배열이므로 isArray 체크 불필요)
+  const getTotalSurveys = () => {
+    return surveys.length;
+  };
+
+  const getActiveSurveys = () => {
+    return surveys.filter(s => s.status === 'active').length;
+  };
+
+  const getDraftSurveys = () => {
+    return surveys.filter(s => s.status === 'draft').length;
+  };
+
+  const getTotalResponses = () => {
+    return surveys.reduce((sum, s) => {
+      const responses = Array.isArray(s.responses) ? s.responses : [];
+      return sum + responses.length;
+    }, 0);
+  };
 
   const handleCreateSurvey = () => {
     // 설문 생성 페이지로 이동
@@ -103,7 +110,7 @@ export default function DashboardPage() {
             existingSurveys.push(newSurvey);
             localStorage.setItem('user_surveys', JSON.stringify(existingSurveys));
             
-            setSurveys(existingSurveys);
+            setSurveys(prev => [...prev, newSurvey]);
             alert('설문을 성공적으로 가져왔습니다!');
           } catch (error) {
             alert('설문 파일을 읽을 수 없습니다. JSON 형식인지 확인해주세요.');
@@ -120,7 +127,7 @@ export default function DashboardPage() {
       title: survey.title,
       description: survey.description,
       questions: survey.questions || [],
-      isPublic: survey.status === 'published',
+      isPublic: survey.status === 'active',
       status: 'draft'
     };
 
@@ -199,6 +206,17 @@ export default function DashboardPage() {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">로딩 중...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -253,7 +271,7 @@ export default function DashboardPage() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">총 설문</p>
-                <p className="text-2xl font-semibold text-gray-900">{surveys.length}</p>
+                <p className="text-2xl font-semibold text-gray-900">{getTotalSurveys()}</p>
               </div>
             </div>
           </div>
@@ -267,9 +285,7 @@ export default function DashboardPage() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">진행중</p>
-                <p className="text-2xl font-semibold text-gray-900">
-                  {surveys.filter(s => s.status === 'published').length}
-                </p>
+                <p className="text-2xl font-semibold text-gray-900">{getActiveSurveys()}</p>
               </div>
             </div>
           </div>
@@ -283,9 +299,7 @@ export default function DashboardPage() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">초안</p>
-                <p className="text-2xl font-semibold text-gray-900">
-                  {surveys.filter(s => s.status === 'draft').length}
-                </p>
+                <p className="text-2xl font-semibold text-gray-900">{getDraftSurveys()}</p>
               </div>
             </div>
           </div>
@@ -299,9 +313,7 @@ export default function DashboardPage() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">총 응답</p>
-                <p className="text-2xl font-semibold text-gray-900">
-                  {surveys.reduce((sum, s) => sum + s.responses.length, 0)}
-                </p>
+                <p className="text-2xl font-semibold text-gray-900">{getTotalResponses()}</p>
               </div>
             </div>
           </div>
@@ -338,7 +350,7 @@ export default function DashboardPage() {
           </div>
           
           <div className="divide-y divide-gray-200">
-            {surveys.map((survey) => (
+            {Array.isArray(surveys) && surveys.map((survey) => (
               <div key={survey.id} className="p-6 hover:bg-gray-50 transition-colors">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
@@ -359,7 +371,7 @@ export default function DashboardPage() {
                     <div className="mt-2 flex items-center text-sm text-gray-500">
                       <span>생성일: {survey.createdAt}</span>
                       <span className="mx-2">•</span>
-                      <span>응답 수: {survey.responses.length}개</span>
+                      <span>응답 수: {Array.isArray(survey.responses) ? survey.responses.length : 0}개</span>
                     </div>
                   </div>
                   
@@ -417,7 +429,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Empty State */}
-        {surveys.length === 0 && (
+        {(!Array.isArray(surveys) || surveys.length === 0) && (
           <div className="text-center py-12">
             <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
