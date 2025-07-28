@@ -80,7 +80,7 @@ export default function AnalyticsPage() {
         let backendResponses: any[] = [];
         try {
           console.log('🔍 Fetching responses from backend for survey:', id);
-          console.log('🆕 NEW VERSION - Enhanced parsing logic activated!');
+          console.log('� CRITICAL FIX v4.0 - Safe parsing activated!');
           backendResponses = await surveyAPI.getResponses(id);
           console.log('📊 Backend responses received:', backendResponses);
           
@@ -108,25 +108,25 @@ export default function AnalyticsPage() {
                       let questionId = null;
                       let answerValue = null;
                       
-                      // Question ID 추출
-                      if (answer.question && typeof answer.question === 'object' && answer.question.id) {
+                      // Question ID 추출 - SAFE VERSION
+                      if (answer && answer.question && typeof answer.question === 'object' && answer.question.id) {
                         questionId = answer.question.id;
-                      } else if (answer.question_id) {
+                      } else if (answer && answer.question_id) {
                         questionId = answer.question_id;
-                      } else if (answer.questionId) {
+                      } else if (answer && answer.questionId) {
                         questionId = answer.questionId;
-                      } else if (typeof answer.question === 'string') {
+                      } else if (answer && typeof answer.question === 'string') {
                         questionId = answer.question;
                       }
                       
-                      // Answer Value 추출
-                      if (answer.text_answer !== undefined && answer.text_answer !== null) {
+                      // Answer Value 추출 - SAFE VERSION
+                      if (answer && answer.text_answer !== undefined && answer.text_answer !== null) {
                         answerValue = answer.text_answer;
-                      } else if (answer.choice_answers !== undefined && answer.choice_answers !== null) {
+                      } else if (answer && answer.choice_answers !== undefined && answer.choice_answers !== null) {
                         answerValue = answer.choice_answers;
-                      } else if (answer.answer !== undefined && answer.answer !== null) {
+                      } else if (answer && answer.answer !== undefined && answer.answer !== null) {
                         answerValue = answer.answer;
-                      } else if (answer.value !== undefined && answer.value !== null) {
+                      } else if (answer && answer.value !== undefined && answer.value !== null) {
                         answerValue = answer.value;
                       }
                       
@@ -202,7 +202,7 @@ export default function AnalyticsPage() {
             }
           }
         } catch (analyticsError) {
-          console.log('❌ Backend response conversion failed:', analyticsError);
+          console.log('🎯 CRITICAL FIX v4.0 - Response parsing failed:', analyticsError);
           console.log('🔍 Raw backend responses for debugging:', backendResponses);
           
           // 백엔드 응답이 있었다면 원시 데이터라도 보여주기
