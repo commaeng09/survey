@@ -259,10 +259,16 @@ export default function SurveyResponsePage() {
   const isLastQuestion = currentQuestionIndex === survey.questions.length - 1;
 
   const handleResponseChange = (questionId: string, value: string | string[] | number) => {
-    setResponses(prev => ({
-      ...prev,
-      [questionId]: value
-    }));
+    console.log('🔄 Response changing for question:', questionId, 'Value:', value);
+    
+    setResponses(prev => {
+      const newResponses = {
+        ...prev,
+        [questionId]: value
+      };
+      console.log('📝 Updated responses:', newResponses);
+      return newResponses;
+    });
     
     // 에러 클리어
     if (errors[questionId]) {

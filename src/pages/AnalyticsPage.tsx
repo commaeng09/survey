@@ -71,22 +71,35 @@ export default function AnalyticsPage() {
       responses: {}
     };
 
-    survey.questions.forEach(question => {
-      const questionResponses = responses.map(r => r.answers[question.id]).filter(Boolean);
+    // survey.questions가 배열인지 확인하고 안전하게 처리
+    const questions = Array.isArray(survey.questions) ? survey.questions : [];
+    
+    questions.forEach((question, index) => {
+      // question과 question.id가 존재하는지 확인
+      if (!question || !question.id) {
+        console.warn(`Question at index ${index} is invalid:`, question);
+        return;
+      }
+
+      const questionResponses = responses
+        .map(r => r.answers && r.answers[question.id])
+        .filter(answer => answer !== undefined && answer !== null);
       
       switch (question.type) {
-        case 'rating':
-          const ratings = questionResponses.map(r => parseInt(r)).filter(r => !isNaN(r));
+        case 'rating': {
+          const ratings = questionResponses.map(r => parseInt(String(r))).filter(r => !isNaN(r));
           analytics.responses[question.id] = {
             type: 'rating',
             data: [1, 2, 3, 4, 5].map(rating => ratings.filter(r => r === rating).length),
             average: ratings.length > 0 ? ratings.reduce((sum, r) => sum + r, 0) / ratings.length : 0
           };
           break;
+        }
         
-        case 'multiple-choice':
+        case 'multiple-choice': {
           const choices: Record<string, number> = {};
-          question.options?.forEach(option => {
+          const options = Array.isArray(question.options) ? question.options : [];
+          options.forEach(option => {
             choices[option] = questionResponses.filter(r => r === option).length;
           });
           analytics.responses[question.id] = {
@@ -94,10 +107,12 @@ export default function AnalyticsPage() {
             data: choices
           };
           break;
+        }
         
-        case 'checkbox':
+        case 'checkbox': {
           const checkboxChoices: Record<string, number> = {};
-          question.options?.forEach(option => {
+          const options = Array.isArray(question.options) ? question.options : [];
+          options.forEach(option => {
             checkboxChoices[option] = questionResponses.filter(r => 
               Array.isArray(r) ? r.includes(option) : r === option
             ).length;
@@ -107,6 +122,7 @@ export default function AnalyticsPage() {
             data: checkboxChoices
           };
           break;
+        }
         
         case 'short-text':
         case 'long-text':
@@ -115,6 +131,12 @@ export default function AnalyticsPage() {
             responses: questionResponses.slice(0, 10) // 최대 10개만 표시
           };
           break;
+          
+        default:
+          analytics.responses[question.id] = {
+            type: 'unknown',
+            responses: questionResponses.slice(0, 10)
+          };
       }
     });
 
