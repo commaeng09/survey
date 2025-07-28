@@ -42,37 +42,48 @@ export default function AnalyticsPage() {
 
   useEffect(() => {
     const fetchSurveyAndAnalytics = async () => {
-      if (!id) return;
+      if (!id) {
+        console.log('❌ No survey ID provided');
+        return;
+      }
       
       try {
         setLoading(true);
         setError(null);
+        console.log('🔍 Starting to fetch survey and analytics for ID:', id);
         
         // 설문지 정보 가져오기 (API 우선, 실패시 로컬 저장소)
         let surveyData: Survey | null = null;
         try {
+          console.log('📡 Trying to fetch survey from API...');
           surveyData = await surveyAPI.getSurvey(id);
+          console.log('✅ Survey data from API:', surveyData);
         } catch (apiError) {
-          console.log('API 호출 실패, 로컬 데이터 사용:', apiError);
+          console.log('❌ API 호출 실패, 로컬 데이터 사용:', apiError);
           // 로컬 저장소에서 설문지 데이터 가져오기
           const allSurveys = JSON.parse(localStorage.getItem('surveys') || '[]');
+          console.log('💾 All surveys in localStorage:', allSurveys);
           surveyData = allSurveys.find((s: Survey) => s.id === id) || null;
+          console.log('📋 Found survey in localStorage:', surveyData);
         }
         
         if (!surveyData) {
+          console.log('❌ No survey data found for ID:', id);
           setError('설문지를 찾을 수 없습니다.');
           return;
         }
         
+        console.log('✅ Survey data loaded:', surveyData);
         setSurvey(surveyData);
 
         // 백엔드에서 응답 데이터 가져오기
         try {
           console.log('🔍 Fetching responses from backend for survey:', id);
           const backendResponses = await surveyAPI.getResponses(id);
-          console.log('📊 Backend responses:', backendResponses);
+          console.log('📊 Backend responses received:', backendResponses);
           
           if (backendResponses && backendResponses.length > 0) {
+            console.log('✅ Found backend responses, converting...');
             // 백엔드 응답 데이터를 로컬 형식으로 변환
             const convertedResponses = backendResponses.map((resp: any) => ({
               id: resp.id,
@@ -93,12 +104,15 @@ export default function AnalyticsPage() {
             // 백엔드에 응답이 없으면 로컬 스토리지 확인
             console.log('📱 No backend responses, checking local storage');
             const localResponses = JSON.parse(localStorage.getItem(`survey_responses_${id}`) || '[]');
+            console.log('💾 Local responses found:', localResponses);
             if (localResponses.length > 0) {
-              console.log('📝 Local responses:', localResponses);
+              console.log('✅ Using local responses for analytics');
               setRawResponses(localResponses);
               const processedAnalytics = processResponsesForAnalytics(surveyData, localResponses);
+              console.log('📈 Processed analytics:', processedAnalytics);
               setAnalytics(processedAnalytics);
             } else {
+              console.log('❌ No responses found anywhere');
               setAnalytics(null);
             }
           }
@@ -106,12 +120,15 @@ export default function AnalyticsPage() {
           console.log('❌ Analytics API 호출 실패, 로컬 데이터 처리:', analyticsError);
           // 로컬 저장소에서 응답 데이터 가져오기
           const responses = JSON.parse(localStorage.getItem(`survey_responses_${id}`) || '[]');
+          console.log('💾 Fallback local responses:', responses);
           if (responses.length > 0) {
-            console.log('📝 Fallback local responses:', responses);
+            console.log('✅ Using fallback local responses');
             setRawResponses(responses);
             const processedAnalytics = processResponsesForAnalytics(surveyData, responses);
+            console.log('📈 Fallback processed analytics:', processedAnalytics);
             setAnalytics(processedAnalytics);
           } else {
+            console.log('❌ No fallback responses found');
             setAnalytics(null);
           }
         }
