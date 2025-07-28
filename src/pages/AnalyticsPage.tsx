@@ -84,17 +84,57 @@ export default function AnalyticsPage() {
           
           if (backendResponses && backendResponses.length > 0) {
             console.log('✅ Found backend responses, converting...');
+            console.log('🔍 Raw backend response structure:', JSON.stringify(backendResponses[0], null, 2));
+            
             // 백엔드 응답 데이터를 로컬 형식으로 변환
-            const convertedResponses = backendResponses.map((resp: any) => ({
-              id: resp.id,
-              surveyId: id,
-              respondentName: resp.respondent_email || 'Anonymous',
-              responses: resp.answers.reduce((acc: any, answer: any) => {
-                acc[answer.question.id] = answer.text_answer || answer.choice_answers;
-                return acc;
-              }, {}),
-              submittedAt: resp.submitted_at
-            }));
+            const convertedResponses = backendResponses.map((resp: any) => {
+              console.log('🔄 Converting response:', resp);
+              
+              // answers 구조 확인
+              const responses: any = {};
+              if (resp.answers && Array.isArray(resp.answers)) {
+                resp.answers.forEach((answer: any) => {
+                  console.log('📝 Processing answer:', answer);
+                  
+                  // 다양한 구조 지원
+                  let questionId = null;
+                  let answerValue = null;
+                  
+                  if (answer.question && answer.question.id) {
+                    questionId = answer.question.id;
+                  } else if (answer.question_id) {
+                    questionId = answer.question_id;
+                  } else if (answer.questionId) {
+                    questionId = answer.questionId;
+                  }
+                  
+                  if (answer.text_answer !== undefined) {
+                    answerValue = answer.text_answer;
+                  } else if (answer.choice_answers !== undefined) {
+                    answerValue = answer.choice_answers;
+                  } else if (answer.answer !== undefined) {
+                    answerValue = answer.answer;
+                  } else if (answer.value !== undefined) {
+                    answerValue = answer.value;
+                  }
+                  
+                  if (questionId && answerValue !== null) {
+                    responses[questionId] = answerValue;
+                    console.log(`✅ Mapped question ${questionId} -> ${answerValue}`);
+                  } else {
+                    console.warn('❌ Failed to extract question ID or answer value:', answer);
+                  }
+                });
+              }
+              
+              return {
+                id: resp.id,
+                surveyId: id,
+                respondentName: resp.respondent_email || resp.respondent_name || 'Anonymous',
+                responses: responses,
+                submittedAt: resp.submitted_at || resp.created_at
+              };
+            });
             
             console.log('📝 Converted responses:', convertedResponses);
             setRawResponses(convertedResponses);
