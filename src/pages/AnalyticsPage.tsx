@@ -8,8 +8,11 @@ export default function AnalyticsPage() {
   const [selectedPeriod, setSelectedPeriod] = useState<'7d' | '30d' | '90d' | 'all'>('30d');
   const [survey, setSurvey] = useState<Survey | null>(null);
   const [analytics, setAnalytics] = useState<any>(null);
+  const [rawResponses, setRawResponses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showResponsesModal, setShowResponsesModal] = useState(false);
+  const [selectedQuestionForResponses, setSelectedQuestionForResponses] = useState<Question | null>(null);
 
   useEffect(() => {
     const fetchSurveyAndAnalytics = async () => {
@@ -56,6 +59,8 @@ export default function AnalyticsPage() {
               submittedAt: resp.submitted_at
             }));
             
+            console.log('📝 Converted responses:', convertedResponses);
+            setRawResponses(convertedResponses);
             const processedAnalytics = processResponsesForAnalytics(surveyData, convertedResponses);
             setAnalytics(processedAnalytics);
           } else {
@@ -63,6 +68,8 @@ export default function AnalyticsPage() {
             console.log('📱 No backend responses, checking local storage');
             const localResponses = JSON.parse(localStorage.getItem(`survey_responses_${id}`) || '[]');
             if (localResponses.length > 0) {
+              console.log('📝 Local responses:', localResponses);
+              setRawResponses(localResponses);
               const processedAnalytics = processResponsesForAnalytics(surveyData, localResponses);
               setAnalytics(processedAnalytics);
             } else {
@@ -74,6 +81,8 @@ export default function AnalyticsPage() {
           // 로컬 저장소에서 응답 데이터 가져오기
           const responses = JSON.parse(localStorage.getItem(`survey_responses_${id}`) || '[]');
           if (responses.length > 0) {
+            console.log('📝 Fallback local responses:', responses);
+            setRawResponses(responses);
             const processedAnalytics = processResponsesForAnalytics(surveyData, responses);
             setAnalytics(processedAnalytics);
           } else {
@@ -114,11 +123,16 @@ export default function AnalyticsPage() {
 
       console.log(`Processing question ${index + 1}: ${question.title} (ID: ${question.id})`);
 
+      // 응답 데이터 구조 확인 및 추출
       const questionResponses = responses
-        .map(r => r.answers && r.answers[question.id])
-        .filter(answer => answer !== undefined && answer !== null);
+        .map(r => {
+          // 두 가지 구조 지원: r.responses[question.id] 또는 r.answers[question.id]
+          const answer = (r.responses && r.responses[question.id]) || (r.answers && r.answers[question.id]);
+          return answer;
+        })
+        .filter(answer => answer !== undefined && answer !== null && answer !== '');
       
-      console.log(`Found ${questionResponses.length} responses for question ${question.id}`);
+      console.log(`Found ${questionResponses.length} responses for question ${question.id}:`, questionResponses);
       
       switch (question.type) {
         case 'rating': {
@@ -147,11 +161,42 @@ export default function AnalyticsPage() {
         case 'checkbox': {
           const checkboxChoices: Record<string, number> = {};
           const options = Array.isArray(question.options) ? question.options : [];
+          
+          // 각 옵션에 대해 카운트 초기화
           options.forEach(option => {
-            checkboxChoices[option] = questionResponses.filter(r => 
-              Array.isArray(r) ? r.includes(option) : r === option
-            ).length;
+            checkboxChoices[option] = 0;
           });
+          
+          // 응답 분석
+          questionResponses.forEach(response => {
+            let selectedOptions: string[] = [];
+            
+            // 다양한 형식의 응답 처리
+            if (Array.isArray(response)) {
+              selectedOptions = response;
+            } else if (typeof response === 'string') {
+              try {
+                // JSON 문자열인 경우 파싱 시도
+                const parsed = JSON.parse(response);
+                if (Array.isArray(parsed)) {
+                  selectedOptions = parsed;
+                } else {
+                  selectedOptions = [response];
+                }
+              } catch {
+                // JSON이 아니면 단일 값으로 처리
+                selectedOptions = [response];
+              }
+            }
+            
+            // 선택된 옵션들에 대해 카운트 증가
+            selectedOptions.forEach(option => {
+              if (checkboxChoices.hasOwnProperty(option)) {
+                checkboxChoices[option]++;
+              }
+            });
+          });
+          
           analytics.responses[question.id] = {
             type: 'checkbox',
             data: checkboxChoices
@@ -176,6 +221,25 @@ export default function AnalyticsPage() {
     });
 
     return analytics;
+  };
+
+  const getQuestionResponses = (questionId: string) => {
+    return rawResponses
+      .map(r => {
+        const answer = (r.responses && r.responses[questionId]) || (r.answers && r.answers[questionId]);
+        return {
+          id: r.id,
+          respondentName: r.respondentName || 'Anonymous',
+          submittedAt: r.submittedAt,
+          answer: answer
+        };
+      })
+      .filter(r => r.answer !== undefined && r.answer !== null && r.answer !== '');
+  };
+
+  const showQuestionResponses = (question: Question) => {
+    setSelectedQuestionForResponses(question);
+    setShowResponsesModal(true);
   };
 
   if (loading) {
@@ -238,8 +302,16 @@ export default function AnalyticsPage() {
         
         return (
           <div className="space-y-4">
-            <div className="text-lg font-medium text-gray-900">
-              평균 점수: {questionData.average}점
+            <div className="flex justify-between items-center">
+              <div className="text-lg font-medium text-gray-900">
+                평균 점수: {questionData.average.toFixed(1)}점
+              </div>
+              <button
+                onClick={() => showQuestionResponses(question)}
+                className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
+              >
+                개별 응답 보기
+              </button>
             </div>
             <div className="space-y-2">
               {ratingLabels.map((label, index) => (
@@ -267,6 +339,17 @@ export default function AnalyticsPage() {
         
         return (
           <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <div className="text-sm text-gray-600">
+                총 {total}개의 응답
+              </div>
+              <button
+                onClick={() => showQuestionResponses(question)}
+                className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
+              >
+                개별 응답 보기
+              </button>
+            </div>
             {Object.entries(questionData.data).map(([option, count]: [string, any]) => (
               <div key={option} className="flex items-center space-x-3">
                 <span className="w-24 text-sm text-gray-600 truncate">{option}</span>
@@ -290,6 +373,17 @@ export default function AnalyticsPage() {
         
         return (
           <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <div className="text-sm text-gray-600">
+                다중선택 응답 통계
+              </div>
+              <button
+                onClick={() => showQuestionResponses(question)}
+                className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
+              >
+                개별 응답 보기
+              </button>
+            </div>
             {Object.entries(questionData.data).map(([option, count]: [string, any]) => (
               <div key={option} className="flex items-center space-x-3">
                 <span className="w-24 text-sm text-gray-600 truncate">{option}</span>
@@ -312,19 +406,30 @@ export default function AnalyticsPage() {
       case 'long-text':
         return (
           <div className="space-y-3">
-            <div className="text-sm text-gray-600 mb-3">
-              총 {questionData.responses.length}개의 응답
+            <div className="flex justify-between items-center">
+              <div className="text-sm text-gray-600">
+                총 {questionData.responses.length}개의 응답
+              </div>
+              <button
+                onClick={() => showQuestionResponses(question)}
+                className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
+              >
+                모든 응답 보기
+              </button>
             </div>
             <div className="max-h-64 overflow-y-auto space-y-2">
-              {questionData.responses.slice(0, 10).map((response: string, index: number) => (
+              {questionData.responses.slice(0, 5).map((response: string, index: number) => (
                 <div key={index} className="p-3 bg-gray-50 rounded-lg border">
                   <p className="text-sm text-gray-700">{response}</p>
                 </div>
               ))}
-              {questionData.responses.length > 10 && (
+              {questionData.responses.length > 5 && (
                 <div className="text-center py-2">
-                  <button className="text-blue-600 hover:text-blue-800 text-sm">
-                    더 보기 (+{questionData.responses.length - 10}개)
+                  <button 
+                    onClick={() => showQuestionResponses(question)}
+                    className="text-blue-600 hover:text-blue-800 text-sm"
+                  >
+                    더 보기 (+{questionData.responses.length - 5}개)
                   </button>
                 </div>
               )}
@@ -512,6 +617,96 @@ export default function AnalyticsPage() {
           })}
         </div>
       </div>
+
+      {/* 개별 응답 모달 */}
+      {showResponsesModal && selectedQuestionForResponses && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] m-4">
+            <div className="flex items-center justify-between p-6 border-b">
+              <h3 className="text-lg font-medium text-gray-900">
+                개별 응답: {selectedQuestionForResponses.title}
+              </h3>
+              <button
+                onClick={() => setShowResponsesModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto max-h-[70vh]">
+              {(() => {
+                const responses = getQuestionResponses(selectedQuestionForResponses.id);
+                
+                if (responses.length === 0) {
+                  return (
+                    <div className="text-center py-8 text-gray-500">
+                      이 질문에 대한 응답이 없습니다.
+                    </div>
+                  );
+                }
+                
+                return (
+                  <div className="space-y-4">
+                    <div className="text-sm text-gray-600 mb-4">
+                      총 {responses.length}개의 응답
+                    </div>
+                    
+                    {responses.map((response, index) => (
+                      <div key={response.id || index} className="border border-gray-200 rounded-lg p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="text-sm text-gray-500">
+                            응답자: {response.respondentName}
+                          </div>
+                          <div className="text-xs text-gray-400">
+                            {response.submittedAt ? new Date(response.submittedAt).toLocaleString('ko-KR') : '시간 정보 없음'}
+                          </div>
+                        </div>
+                        
+                        <div className="mt-2">
+                          {selectedQuestionForResponses.type === 'checkbox' && Array.isArray(response.answer) ? (
+                            <div className="flex flex-wrap gap-1">
+                              {response.answer.map((item, idx) => (
+                                <span key={idx} className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
+                                  {item}
+                                </span>
+                              ))}
+                            </div>
+                          ) : selectedQuestionForResponses.type === 'rating' ? (
+                            <div className="flex items-center space-x-2">
+                              <span className="text-lg font-medium">{response.answer}점</span>
+                              <div className="flex">
+                                {[1, 2, 3, 4, 5].map(star => (
+                                  <svg key={star} className={`w-5 h-5 ${parseInt(response.answer) >= star ? 'text-yellow-400' : 'text-gray-300'}`} fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                  </svg>
+                                ))}
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="text-gray-700">{response.answer}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+            </div>
+            
+            <div className="flex justify-end p-6 border-t">
+              <button
+                onClick={() => setShowResponsesModal(false)}
+                className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-md transition-colors"
+              >
+                닫기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
