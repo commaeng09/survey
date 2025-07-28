@@ -99,31 +99,43 @@ export default function AnalyticsPage() {
                 // resp.answers가 존재하고 배열인지 확인
                 if (resp.answers && Array.isArray(resp.answers)) {
                   console.log(`📝 Processing ${resp.answers.length} answers for response ${index + 1}`);
+                  console.log(`🔍 Survey questions available:`, surveyData.questions.map(q => q.id));
                   
                   resp.answers.forEach((answer: any, answerIndex: number) => {
                     console.log(`� Processing answer ${answerIndex + 1}:`, answer);
                     
                     try {
-                      // 다양한 구조 지원
+                      // 백엔드 응답에 question ID가 없으므로 순서를 기반으로 매칭
                       let questionId = null;
                       let answerValue = null;
                       
-                      // Question ID 추출 - SAFE VERSION
-                      if (answer && answer.question && typeof answer.question === 'object' && answer.question.id) {
-                        questionId = answer.question.id;
-                      } else if (answer && answer.question_id) {
-                        questionId = answer.question_id;
-                      } else if (answer && answer.questionId) {
-                        questionId = answer.questionId;
-                      } else if (answer && typeof answer.question === 'string') {
-                        questionId = answer.question;
+                      // 순서 기반 질문 ID 매칭 (가장 일반적인 방법)
+                      if (surveyData.questions && surveyData.questions[answerIndex]) {
+                        questionId = surveyData.questions[answerIndex].id;
+                        console.log(`🎯 Question ID from order: ${questionId} (index: ${answerIndex})`);
+                      }
+                      
+                      // 백업: 다양한 구조 지원
+                      if (!questionId) {
+                        if (answer && answer.question && typeof answer.question === 'object' && answer.question.id) {
+                          questionId = answer.question.id;
+                        } else if (answer && answer.question_id) {
+                          questionId = answer.question_id;
+                        } else if (answer && answer.questionId) {
+                          questionId = answer.questionId;
+                        } else if (answer && typeof answer.question === 'string') {
+                          questionId = answer.question;
+                        }
                       }
                       
                       // Answer Value 추출 - SAFE VERSION
                       if (answer && answer.text_answer !== undefined && answer.text_answer !== null) {
                         answerValue = answer.text_answer;
                       } else if (answer && answer.choice_answers !== undefined && answer.choice_answers !== null) {
-                        answerValue = answer.choice_answers;
+                        // choice_answers가 배열이고 값이 있으면 사용
+                        if (Array.isArray(answer.choice_answers) && answer.choice_answers.length > 0) {
+                          answerValue = answer.choice_answers;
+                        }
                       } else if (answer && answer.answer !== undefined && answer.answer !== null) {
                         answerValue = answer.answer;
                       } else if (answer && answer.value !== undefined && answer.value !== null) {
@@ -132,14 +144,15 @@ export default function AnalyticsPage() {
                       
                       console.log(`🔍 Extracted - questionId: ${questionId}, answerValue:`, answerValue);
                       
-                      if (questionId && answerValue !== null && answerValue !== undefined) {
+                      if (questionId && answerValue !== null && answerValue !== undefined && answerValue !== '') {
                         responses[questionId] = answerValue;
                         console.log(`✅ Mapped question ${questionId} -> ${JSON.stringify(answerValue)}`);
                       } else {
                         console.warn(`❌ Failed to extract question ID or answer value:`, {
                           questionId,
                           answerValue,
-                          originalAnswer: answer
+                          originalAnswer: answer,
+                          answerIndex
                         });
                       }
                     } catch (answerError) {
