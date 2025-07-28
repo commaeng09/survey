@@ -77,9 +77,10 @@ export default function AnalyticsPage() {
         setSurvey(surveyData);
 
         // 백엔드에서 응답 데이터 가져오기
+        let backendResponses: any[] = [];
         try {
           console.log('🔍 Fetching responses from backend for survey:', id);
-          const backendResponses = await surveyAPI.getResponses(id);
+          backendResponses = await surveyAPI.getResponses(id);
           console.log('📊 Backend responses received:', backendResponses);
           
           if (backendResponses && backendResponses.length > 0) {
@@ -200,7 +201,23 @@ export default function AnalyticsPage() {
             }
           }
         } catch (analyticsError) {
-          console.log('❌ Analytics API 호출 실패, 로컬 데이터 처리:', analyticsError);
+          console.log('❌ Backend response conversion failed:', analyticsError);
+          console.log('🔍 Raw backend responses for debugging:', backendResponses);
+          
+          // 백엔드 응답이 있었다면 원시 데이터라도 보여주기
+          if (backendResponses && backendResponses.length > 0) {
+            console.log('⚠️ Attempting manual conversion as fallback...');
+            const manualResponses = backendResponses.map((resp: any, index: number) => ({
+              id: resp.id || `manual_${index}`,
+              surveyId: id,
+              respondentName: resp.respondent_email || `Manual_${index}`,
+              responses: {}, // 빈 객체로 일단 설정
+              submittedAt: resp.submitted_at || new Date().toISOString()
+            }));
+            console.log('🔧 Manual responses:', manualResponses);
+            setRawResponses(manualResponses);
+          }
+          
           // 로컬 저장소에서 응답 데이터 가져오기
           const responses = JSON.parse(localStorage.getItem(`survey_responses_${id}`) || '[]');
           console.log('💾 Fallback local responses:', responses);
