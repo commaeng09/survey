@@ -2,6 +2,31 @@ import { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { surveyAPI } from '../services/api';
 import type { Survey, Question } from '../types/survey';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+  PointElement,
+  LineElement,
+} from 'chart.js';
+import { Bar, Pie, Line } from 'react-chartjs-2';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+  PointElement,
+  LineElement
+);
 
 export default function AnalyticsPage() {
   const { id } = useParams<{ id: string }>();
@@ -13,6 +38,7 @@ export default function AnalyticsPage() {
   const [error, setError] = useState<string | null>(null);
   const [showResponsesModal, setShowResponsesModal] = useState(false);
   const [selectedQuestionForResponses, setSelectedQuestionForResponses] = useState<Question | null>(null);
+  const [viewMode, setViewMode] = useState<'chart' | 'table'>('chart');
 
   useEffect(() => {
     const fetchSurveyAndAnalytics = async () => {
@@ -242,6 +268,110 @@ export default function AnalyticsPage() {
     setShowResponsesModal(true);
   };
 
+  const createChartData = (question: Question, questionData: any) => {
+    const colors = [
+      '#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6',
+      '#EC4899', '#06B6D4', '#84CC16', '#F97316', '#6B7280'
+    ];
+
+    switch (question.type) {
+      case 'rating':
+        return {
+          type: 'bar',
+          data: {
+            labels: ['1점', '2점', '3점', '4점', '5점'],
+            datasets: [{
+              label: '응답 수',
+              data: questionData.data,
+              backgroundColor: colors.slice(0, 5),
+              borderColor: colors.slice(0, 5).map(color => color + '80'),
+              borderWidth: 1
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: {
+                display: false
+              },
+              title: {
+                display: true,
+                text: `평균: ${questionData.average.toFixed(1)}점`
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  stepSize: 1
+                }
+              }
+            }
+          }
+        };
+
+      case 'multiple-choice':
+        const mcLabels = Object.keys(questionData.data);
+        const mcValues = Object.values(questionData.data) as number[];
+        return {
+          type: 'pie',
+          data: {
+            labels: mcLabels,
+            datasets: [{
+              data: mcValues,
+              backgroundColor: colors.slice(0, mcLabels.length),
+              borderColor: '#ffffff',
+              borderWidth: 2
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: {
+                position: 'bottom' as const
+              }
+            }
+          }
+        };
+
+      case 'checkbox':
+        const cbLabels = Object.keys(questionData.data);
+        const cbValues = Object.values(questionData.data) as number[];
+        return {
+          type: 'bar',
+          data: {
+            labels: cbLabels,
+            datasets: [{
+              label: '선택 횟수',
+              data: cbValues,
+              backgroundColor: '#8B5CF6',
+              borderColor: '#7C3AED',
+              borderWidth: 1
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: {
+                display: false
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  stepSize: 1
+                }
+              }
+            }
+          }
+        };
+
+      default:
+        return null;
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -295,6 +425,8 @@ export default function AnalyticsPage() {
   }
 
   const renderQuestionAnalytics = (question: Question, questionData: any) => {
+    const chartData = createChartData(question, questionData);
+    
     switch (question.type) {
       case 'rating':
         const ratingLabels = ['1점', '2점', '3점', '4점', '5점'];
@@ -306,30 +438,45 @@ export default function AnalyticsPage() {
               <div className="text-lg font-medium text-gray-900">
                 평균 점수: {questionData.average.toFixed(1)}점
               </div>
-              <button
-                onClick={() => showQuestionResponses(question)}
-                className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
-              >
-                개별 응답 보기
-              </button>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => setViewMode(viewMode === 'chart' ? 'table' : 'chart')}
+                  className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+                >
+                  {viewMode === 'chart' ? '표로 보기' : '차트로 보기'}
+                </button>
+                <button
+                  onClick={() => showQuestionResponses(question)}
+                  className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
+                >
+                  개별 응답 보기
+                </button>
+              </div>
             </div>
-            <div className="space-y-2">
-              {ratingLabels.map((label, index) => (
-                <div key={index} className="flex items-center space-x-3">
-                  <span className="w-12 text-sm text-gray-600">{label}</span>
-                  <div className="flex-1 bg-gray-200 rounded-full h-6 relative">
-                    <div
-                      className="bg-blue-500 h-6 rounded-full flex items-center justify-end pr-2"
-                      style={{ width: `${(questionData.data[index] / maxRating) * 100}%` }}
-                    >
-                      <span className="text-white text-xs font-medium">
-                        {questionData.data[index]}
-                      </span>
+            
+            {viewMode === 'chart' && chartData ? (
+              <div className="bg-white p-4 rounded-lg border">
+                <Bar data={chartData.data} options={chartData.options} />
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {ratingLabels.map((label, index) => (
+                  <div key={index} className="flex items-center space-x-3">
+                    <span className="w-12 text-sm text-gray-600">{label}</span>
+                    <div className="flex-1 bg-gray-200 rounded-full h-6 relative">
+                      <div
+                        className="bg-blue-500 h-6 rounded-full flex items-center justify-end pr-2"
+                        style={{ width: `${maxRating > 0 ? (questionData.data[index] / maxRating) * 100 : 0}%` }}
+                      >
+                        <span className="text-white text-xs font-medium">
+                          {questionData.data[index]}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         );
 
@@ -343,28 +490,43 @@ export default function AnalyticsPage() {
               <div className="text-sm text-gray-600">
                 총 {total}개의 응답
               </div>
-              <button
-                onClick={() => showQuestionResponses(question)}
-                className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
-              >
-                개별 응답 보기
-              </button>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => setViewMode(viewMode === 'chart' ? 'table' : 'chart')}
+                  className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+                >
+                  {viewMode === 'chart' ? '표로 보기' : '차트로 보기'}
+                </button>
+                <button
+                  onClick={() => showQuestionResponses(question)}
+                  className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
+                >
+                  개별 응답 보기
+                </button>
+              </div>
             </div>
-            {Object.entries(questionData.data).map(([option, count]: [string, any]) => (
-              <div key={option} className="flex items-center space-x-3">
-                <span className="w-24 text-sm text-gray-600 truncate">{option}</span>
-                <div className="flex-1 bg-gray-200 rounded-full h-6 relative">
-                  <div
-                    className="bg-green-500 h-6 rounded-full flex items-center justify-end pr-2"
-                    style={{ width: `${(count / maxChoice) * 100}%` }}
-                  >
-                    <span className="text-white text-xs font-medium">
-                      {count} ({Math.round((count / total) * 100)}%)
-                    </span>
+
+            {viewMode === 'chart' && chartData ? (
+              <div className="bg-white p-4 rounded-lg border">
+                <Pie data={chartData.data} options={chartData.options} />
+              </div>
+            ) : (
+              Object.entries(questionData.data).map(([option, count]: [string, any]) => (
+                <div key={option} className="flex items-center space-x-3">
+                  <span className="w-24 text-sm text-gray-600 truncate">{option}</span>
+                  <div className="flex-1 bg-gray-200 rounded-full h-6 relative">
+                    <div
+                      className="bg-green-500 h-6 rounded-full flex items-center justify-end pr-2"
+                      style={{ width: `${maxChoice > 0 ? (count / maxChoice) * 100 : 0}%` }}
+                    >
+                      <span className="text-white text-xs font-medium">
+                        {count} ({Math.round((count / total) * 100)}%)
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         );
 
@@ -377,28 +539,43 @@ export default function AnalyticsPage() {
               <div className="text-sm text-gray-600">
                 다중선택 응답 통계
               </div>
-              <button
-                onClick={() => showQuestionResponses(question)}
-                className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
-              >
-                개별 응답 보기
-              </button>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => setViewMode(viewMode === 'chart' ? 'table' : 'chart')}
+                  className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+                >
+                  {viewMode === 'chart' ? '표로 보기' : '차트로 보기'}
+                </button>
+                <button
+                  onClick={() => showQuestionResponses(question)}
+                  className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
+                >
+                  개별 응답 보기
+                </button>
+              </div>
             </div>
-            {Object.entries(questionData.data).map(([option, count]: [string, any]) => (
-              <div key={option} className="flex items-center space-x-3">
-                <span className="w-24 text-sm text-gray-600 truncate">{option}</span>
-                <div className="flex-1 bg-gray-200 rounded-full h-6 relative">
-                  <div
-                    className="bg-purple-500 h-6 rounded-full flex items-center justify-end pr-2"
-                    style={{ width: `${(count / maxCheckbox) * 100}%` }}
-                  >
-                    <span className="text-white text-xs font-medium">
-                      {count} ({Math.round((count / (analytics?.totalResponses || 1)) * 100)}%)
-                    </span>
+
+            {viewMode === 'chart' && chartData ? (
+              <div className="bg-white p-4 rounded-lg border">
+                <Bar data={chartData.data} options={chartData.options} />
+              </div>
+            ) : (
+              Object.entries(questionData.data).map(([option, count]: [string, any]) => (
+                <div key={option} className="flex items-center space-x-3">
+                  <span className="w-24 text-sm text-gray-600 truncate">{option}</span>
+                  <div className="flex-1 bg-gray-200 rounded-full h-6 relative">
+                    <div
+                      className="bg-purple-500 h-6 rounded-full flex items-center justify-end pr-2"
+                      style={{ width: `${maxCheckbox > 0 ? (count / maxCheckbox) * 100 : 0}%` }}
+                    >
+                      <span className="text-white text-xs font-medium">
+                        {count} ({Math.round((count / (analytics?.totalResponses || 1)) * 100)}%)
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         );
 

@@ -139,14 +139,38 @@ export const surveyAPI = {
   },
   
   // 설문조사 응답 제출
-  submitResponse: (id: string, responseData: any) =>
-    fetch(`${API_BASE_URL}/public/${id}/submit/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(responseData),
-    }).then(res => res.json()),
+  submitResponse: async (id: string, responseData: any) => {
+    const url = `${API_BASE_URL}/public/${id}/submit/`;
+    console.log('🚀 submitResponse URL:', url);
+    console.log('🚀 submitResponse data:', responseData);
+    
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(responseData),
+      });
+      
+      console.log('📡 submitResponse response status:', response.status);
+      console.log('📡 submitResponse response ok:', response.ok);
+      
+      const result = await response.json();
+      console.log('📡 submitResponse result:', result);
+      
+      if (!response.ok) {
+        console.error('❌ submitResponse failed with status:', response.status);
+        console.error('❌ submitResponse error details:', result);
+        throw new Error(`HTTP ${response.status}: ${JSON.stringify(result)}`);
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('💥 submitResponse network error:', error);
+      throw error;
+    }
+  },
   
   // 설문조사 분석 데이터
   getAnalytics: (id: string) =>

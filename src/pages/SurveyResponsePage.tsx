@@ -373,6 +373,10 @@ export default function SurveyResponsePage() {
 
     setIsSubmitting(true);
     
+    console.log('📋 Final responses before submission:', responses);
+    console.log('📋 Survey ID:', survey.id);
+    console.log('📋 Survey questions:', survey.questions.map(q => ({ id: q.id, type: q.type, title: q.title })));
+    
     try {
       // 백엔드 API로 응답 제출 시도
       const responseData = {
@@ -384,8 +388,10 @@ export default function SurveyResponsePage() {
       };
 
       console.log('🚀 Submitting response to backend:', responseData);
-      await surveyAPI.submitResponse(survey.id, responseData);
-      console.log('✅ 응답이 백엔드로 제출되었습니다:', responseData);
+      console.log('🚀 API URL will be:', `${import.meta.env.DEV ? 'http://localhost:8000' : 'https://survey-backend-dgiy.onrender.com'}/api/public/${survey.id}/submit/`);
+      
+      const result = await surveyAPI.submitResponse(survey.id, responseData);
+      console.log('✅ 응답이 백엔드로 제출되었습니다:', result);
       
       // 백엔드 제출 성공 시에도 로컬에 저장 (Analytics 페이지에서 사용)
       const localResponseData = {
