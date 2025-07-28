@@ -39,6 +39,27 @@ class SurveyCreateSerializer(serializers.ModelSerializer):
             Question.objects.create(survey=survey, **question_data)
         
         return survey
+    
+    def update(self, instance, validated_data):
+        logger.info(f"SurveyCreateSerializer update received data: {validated_data}")
+        questions_data = validated_data.pop('questions', [])
+        
+        # Update survey fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        
+        # Handle questions update
+        if questions_data:
+            # Delete existing questions
+            instance.questions.all().delete()
+            
+            # Create new questions
+            for question_data in questions_data:
+                logger.info(f"Creating updated question: {question_data}")
+                Question.objects.create(survey=instance, **question_data)
+        
+        return instance
 
 class AnswerSerializer(serializers.ModelSerializer):
     question_id = serializers.UUIDField(write_only=True)

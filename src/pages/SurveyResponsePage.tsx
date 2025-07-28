@@ -260,6 +260,8 @@ export default function SurveyResponsePage() {
 
   const handleResponseChange = (questionId: string, value: string | string[] | number) => {
     console.log('🔄 Response changing for question:', questionId, 'Value:', value);
+    console.log('🔍 Current question type:', currentQuestion?.type);
+    console.log('🔍 Current question object:', currentQuestion);
     
     setResponses(prev => {
       const newResponses = {
@@ -267,6 +269,7 @@ export default function SurveyResponsePage() {
         [questionId]: value
       };
       console.log('📝 Updated responses:', newResponses);
+      console.log('📝 All responses keys:', Object.keys(newResponses));
       return newResponses;
     });
     
@@ -275,6 +278,7 @@ export default function SurveyResponsePage() {
       setErrors(prev => {
         const newErrors = { ...prev };
         delete newErrors[questionId];
+        console.log('✅ Cleared error for question:', questionId);
         return newErrors;
       });
     }
@@ -387,8 +391,12 @@ export default function SurveyResponsePage() {
     const response = responses[question.id];
     const error = errors[question.id];
 
-    switch (question.type) {
+    // Map frontend question types to backend types for proper rendering
+    const questionType = question.type;
+    
+    switch (questionType) {
       case 'short-text':
+      case 'text': // Backend type
         return (
           <div>
             <input
@@ -405,6 +413,7 @@ export default function SurveyResponsePage() {
         );
 
       case 'long-text':
+      case 'textarea': // Backend type
         return (
           <div>
             <textarea
@@ -421,6 +430,7 @@ export default function SurveyResponsePage() {
         );
 
       case 'multiple-choice':
+      case 'radio': // Backend type
         return (
           <div>
             <div className="space-y-3">
@@ -519,7 +529,7 @@ export default function SurveyResponsePage() {
         );
 
       default:
-        return <div className="text-gray-500">지원하지 않는 질문 유형입니다.</div>;
+        return <div className="text-gray-500">지원하지 않는 질문 유형입니다. ({questionType})</div>;
     }
   };
 
@@ -585,7 +595,7 @@ export default function SurveyResponsePage() {
         <div className="bg-white rounded-lg shadow-sm p-8">
           <div className="mb-8">
             <h3 className="text-xl font-medium text-gray-900 mb-2">
-              {currentQuestion.title}
+              {currentQuestion.title || currentQuestion.text}
               {currentQuestion.required && (
                 <span className="text-red-500 ml-1">*</span>
               )}
