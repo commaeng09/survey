@@ -80,6 +80,7 @@ export default function AnalyticsPage() {
         let backendResponses: any[] = [];
         try {
           console.log('🔍 Fetching responses from backend for survey:', id);
+          console.log('🆕 NEW VERSION - Enhanced parsing logic activated!');
           backendResponses = await surveyAPI.getResponses(id);
           console.log('📊 Backend responses received:', backendResponses);
           
