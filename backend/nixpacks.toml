@@ -1,0 +1,15 @@
+# Railway Nixpacks Configuration
+providers = ["python"]
+
+[phases.build]
+cmds = [
+    "pip install --upgrade pip",
+    "pip install --no-cache-dir -r requirements.txt"
+]
+
+[phases.deploy]
+cmd = "python manage.py collectstatic --noinput && python manage.py migrate && gunicorn survey_project.wsgi:application --bind 0.0.0.0:$PORT"
+
+[variables]
+NIXPACKS_PYTHON_VERSION = "3.11"
+PYTHONPATH = "/app"
