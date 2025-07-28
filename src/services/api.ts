@@ -1,3 +1,5 @@
+import type { Survey } from '../types/survey';
+
 // API 기본 설정
 const API_BASE_URL = 'https://survey-backend-dgiy.onrender.com/api';
 
@@ -69,15 +71,15 @@ export const authAPI = {
 export const surveyAPI = {
   // 내 설문조사 목록
   getMySurveys: async (): Promise<Survey[]> => {
-    const response = await api.get('/surveys/');
+    const response = await apiRequest('/surveys/');
     // 백엔드 응답 구조를 정규화하여 항상 배열을 반환
-    if (Array.isArray(response.data)) {
-      return response.data;
+    if (Array.isArray(response)) {
+      return response;
     }
-    if (response.data && Array.isArray(response.data.results)) {
-      return response.data.results;
+    if (response && Array.isArray(response.results)) {
+      return response.results;
     }
-    console.warn('Unexpected API response structure for getMySurveys:', response.data);
+    console.warn('Unexpected API response structure for getMySurveys:', response);
     return []; // 어떤 경우에도 빈 배열을 반환하여 타입 오류 방지
   },
 

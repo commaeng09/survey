@@ -17,20 +17,26 @@ export default function DashboardPage() {
       
       try {
         setIsLoading(true);
+        console.log('📊 Loading surveys from backend...');
+        
+        // API가 이미 정규화된 배열을 반환하므로 직접 사용
         const backendSurveys = await surveyAPI.getMySurveys();
+        console.log('📋 Backend surveys received:', backendSurveys);
         
         const mappedSurveys = backendSurveys.map((s: any) => ({
           id: s.id,
           title: s.title,
           description: s.description || '',
-          status: s.status === 'published' ? 'active' : (s.status || 'draft'),
+          status: s.status === 'published' ? 'published' : (s.status || 'draft'),
           createdAt: s.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
           updatedAt: s.updated_at?.split('T')[0] || new Date().toISOString().split('T')[0],
           responses: Array.isArray(s.responses) ? s.responses : [],
           questions: s.questions || [],
-          creator: s.creator || user?.username
+          creator: s.creator || user?.username,
+          isPublic: s.status === 'published'
         }));
         
+        console.log('✅ Mapped surveys:', mappedSurveys);
         setSurveys(mappedSurveys);
         
       } catch (error) {
@@ -44,6 +50,12 @@ export default function DashboardPage() {
     loadSurveys();
   }, [user]);
 
+  // 안전한 통계 계산 함수들
+  const getTotalSurveys = () => surveys.length;
+  const getActiveSurveys = () => surveys.filter(s => s.status === 'published').length;
+  const getDraftSurveys = () => surveys.filter(s => s.status === 'draft').length;
+  const getTotalResponses = () => surveys.reduce((sum, s) => sum + (s.responses?.length || 0), 0);
+
   const handleCreateSurvey = () => {
     navigate('/surveys/create');
   };
@@ -54,6 +66,14 @@ export default function DashboardPage() {
 
   const handleViewAnalytics = (surveyId: string) => {
     navigate(`/surveys/${surveyId}/analytics`);
+  };
+
+  const handleShareSurvey = (surveyId: string) => {
+    copyShareLink(surveyId);
+  };
+
+  const handleDeleteSurvey = (surveyId: string) => {
+    deleteSurvey(surveyId);
   };
 
   const handleImportSurvey = () => {
@@ -82,7 +102,7 @@ export default function DashboardPage() {
             
             setSurveys(prev => [...prev, newSurvey]);
             alert('설문을 성공적으로 가져왔습니다!');
-          } catch (error) {
+          } catch {
             alert('설문 파일을 읽을 수 없습니다. JSON 형식인지 확인해주세요.');
           }
         };
@@ -97,7 +117,7 @@ export default function DashboardPage() {
       title: survey.title,
       description: survey.description,
       questions: survey.questions || [],
-      isPublic: survey.status === 'active',
+      isPublic: survey.status === 'published',
       status: 'draft'
     };
 
@@ -117,7 +137,6 @@ export default function DashboardPage() {
   };
 
   const copyShareLink = (surveyId: string) => {
-    // 로컬 저장소 데이터인지 확인 (survey- 접두사가 있는 경우)
     if (surveyId.startsWith('survey-')) {
       alert('⚠️ 이 설문조사는 로컬에만 저장되어 있습니다.\n실제 공유하려면 백엔드에 연결된 상태에서 설문조사를 다시 생성해주세요.');
       return;
@@ -127,7 +146,6 @@ export default function DashboardPage() {
     navigator.clipboard.writeText(shareUrl).then(() => {
       alert('설문 링크가 클립보드에 복사되었습니다!');
     }).catch(() => {
-      // 클립보드 API가 지원되지 않는 경우 대체 방법
       const textArea = document.createElement('textarea');
       textArea.value = shareUrl;
       document.body.appendChild(textArea);
@@ -149,7 +167,6 @@ export default function DashboardPage() {
       alert('설문이 삭제되었습니다.');
     } catch (error) {
       console.error('설문 삭제 실패:', error);
-      // 백엔드 연결 실패 시 로컬에서 삭제
       const userSurveys = JSON.parse(localStorage.getItem('user_surveys') || '[]');
       const updatedSurveys = userSurveys.filter((s: any) => s.id !== surveyId);
       localStorage.setItem('user_surveys', JSON.stringify(updatedSurveys));
