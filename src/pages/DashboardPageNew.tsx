@@ -8,7 +8,6 @@ export default function DashboardPage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   
-  // 사용자별 설문 데이터 관리
   const [surveys, setSurveys] = useState<Survey[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -18,7 +17,6 @@ export default function DashboardPage() {
       
       try {
         setIsLoading(true);
-        // API 서비스에서 이미 응답을 정규화하므로, 복잡한 체크 로직이 필요 없음
         const backendSurveys = await surveyAPI.getMySurveys();
         
         const mappedSurveys = backendSurveys.map((s: any) => ({
@@ -27,15 +25,16 @@ export default function DashboardPage() {
           description: s.description || '',
           status: s.status === 'published' ? 'active' : (s.status || 'draft'),
           createdAt: s.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
+          updatedAt: s.updated_at?.split('T')[0] || new Date().toISOString().split('T')[0],
           responses: Array.isArray(s.responses) ? s.responses : [],
-          questions: s.questions || []
+          questions: s.questions || [],
+          creator: s.creator || user?.username
         }));
         
         setSurveys(mappedSurveys);
         
       } catch (error) {
         console.error('❌ 대시보드 설문 로드 실패:', error);
-        // 백엔드 연결 실패 시에도 안전하게 빈 배열로 설정
         setSurveys([]);
       } finally {
         setIsLoading(false);
@@ -45,45 +44,16 @@ export default function DashboardPage() {
     loadSurveys();
   }, [user]);
 
-  // 안전한 통계 계산 함수들 (이제 surveys는 항상 배열이므로 isArray 체크 불필요)
-  const getTotalSurveys = () => {
-    return surveys.length;
-  };
-
-  const getActiveSurveys = () => {
-    return surveys.filter(s => s.status === 'active').length;
-  };
-
-  const getDraftSurveys = () => {
-    return surveys.filter(s => s.status === 'draft').length;
-  };
-
-  const getTotalResponses = () => {
-    return surveys.reduce((sum, s) => {
-      const responses = Array.isArray(s.responses) ? s.responses : [];
-      return sum + responses.length;
-    }, 0);
-  };
-
   const handleCreateSurvey = () => {
-    // 설문 생성 페이지로 이동
-    navigate('/survey/create');
+    navigate('/surveys/create');
   };
 
   const handleEditSurvey = (surveyId: string) => {
-    navigate(`/survey/edit/${surveyId}`);
+    navigate(`/surveys/edit/${surveyId}`);
   };
 
   const handleViewAnalytics = (surveyId: string) => {
-    navigate(`/analytics/${surveyId}`);
-  };
-
-  const handleShareSurvey = (surveyId: string) => {
-    copyShareLink(surveyId);
-  };
-
-  const handleDeleteSurvey = async (surveyId: string) => {
-    await deleteSurvey(surveyId);
+    navigate(`/surveys/${surveyId}/analytics`);
   };
 
   const handleImportSurvey = () => {
@@ -100,8 +70,8 @@ export default function DashboardPage() {
             const newSurvey: Survey = {
               ...surveyData,
               id: `survey-${Date.now()}`,
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
+              createdAt: new Date().toISOString().split('T')[0],
+              updatedAt: new Date().toISOString().split('T')[0],
               creator: user?.username || '',
               responses: []
             };
@@ -121,7 +91,7 @@ export default function DashboardPage() {
     };
     input.click();
   };
-
+  
   const handleExportSurvey = (survey: Survey) => {
     const exportData = {
       title: survey.title,
